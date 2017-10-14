@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2016 KBEngine.
+Copyright (c) 2008-2017 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -22,6 +22,7 @@ along with KBEngine.  If not, see <http://www.gnu.org/licenses/>.
 #include "entity_coordinate_node.h"
 #include "entity.h"
 #include "coordinate_system.h"
+#include "range_trigger_node.h"
 
 namespace KBEngine{	
 
@@ -37,6 +38,7 @@ public:
 
 	INLINE void reset() { pCurrentNode_ = pNode_; }
 	INLINE bool isEntityNode() const { return pCurrentNode_->hasFlags(COORDINATE_NODE_FLAG_ENTITY); }
+	INLINE bool valid() const { return !pCurrentNode_->hasFlags(COORDINATE_NODE_FLAG_HIDE_OR_REMOVED); }
 	INLINE CoordinateNode* currentNode() const { return pCurrentNode_; }
 	INLINE Entity* currentNodeEntity() const { return static_cast<EntityCoordinateNode*>(pCurrentNode_)->pEntity(); }
 	
@@ -152,7 +154,7 @@ CoordinateNode* findNearestNode(CoordinateNode* rootNode, const Position3D& orig
 		NODEWRAP wrap(rootNode, originPos);
 		do
 		{
-			if (wrap.isEntityNode())
+			if (wrap.isEntityNode() && wrap.valid())
 			{
 				pRN = wrap.currentNode();
 				break;
@@ -165,7 +167,7 @@ CoordinateNode* findNearestNode(CoordinateNode* rootNode, const Position3D& orig
 			wrap.reset();
 			while (wrap.next())
 			{
-				if (wrap.isEntityNode())
+				if (wrap.isEntityNode() && wrap.valid())
 				{
 					pRN = wrap.currentNode();
 					break;
@@ -191,7 +193,7 @@ CoordinateNode* findNearestNode(CoordinateNode* rootNode, const Position3D& orig
 		pCoordinateNode = wrap.currentNode();
 		while (wrap.prev())
 		{
-			if (wrap.isEntityNode())
+			if (wrap.isEntityNode() && wrap.valid())
 			{
 				// 由于是从中心点的右边往左边遍历，
 				// 因此第一个position小于中心点的entity就一定是离中心点最近的
@@ -210,7 +212,7 @@ CoordinateNode* findNearestNode(CoordinateNode* rootNode, const Position3D& orig
 		pCoordinateNode = wrap.currentNode();
 		while (wrap.next())
 		{
-			if (wrap.isEntityNode())
+			if (wrap.isEntityNode() && wrap.valid())
 			{
 				// 由于是从中心点的左边往右边遍历，
 				// 因此第一个position大于中心点的entity就一定是离中心点最近的
@@ -246,7 +248,7 @@ void entitiesInAxisRange(std::set<Entity*>& foundEntities, CoordinateNode* rootN
 	NODEWRAP wrap(pCoordinateNode, originPos);
 
 	// 如果节点自己也符合条件，则把自己加进去
-	if (wrap.isEntityNode())
+	if (wrap.isEntityNode() && wrap.valid())
 	{
 		Entity* pEntity = wrap.currentNodeEntity();
 
@@ -261,7 +263,7 @@ void entitiesInAxisRange(std::set<Entity*>& foundEntities, CoordinateNode* rootN
 
 	while (wrap.prev())
 	{
-		if (wrap.isEntityNode())
+		if (wrap.isEntityNode() && wrap.valid())
 		{
 			Entity* pEntity = wrap.currentNodeEntity();
 
@@ -283,7 +285,7 @@ void entitiesInAxisRange(std::set<Entity*>& foundEntities, CoordinateNode* rootN
 
 	while (wrap.next())
 	{
-		if (wrap.isEntityNode())
+		if (wrap.isEntityNode() && wrap.valid())
 		{
 			Entity* pEntity = wrap.currentNodeEntity();
 
@@ -315,18 +317,25 @@ entityNodeUpdating_(0)
 #ifdef _DEBUG
 	descr_ = (fmt::format("EntityCoordinateNode({}_{})", pEntity->scriptName(), pEntity->id()));
 #endif
+
+	weight_ = 1;
+
+	Py_INCREF(pEntity_);
 }
 
 //-------------------------------------------------------------------------------------
 EntityCoordinateNode::~EntityCoordinateNode()
 {
 	watcherNodes_.clear();
+
+	pEntity_->onCoordinateNodesDestroy(this);
+	Py_DECREF(pEntity_);
 }
 
 //-------------------------------------------------------------------------------------
 float EntityCoordinateNode::xx() const
 {
-	if (pEntity_ == NULL || hasFlags((COORDINATE_NODE_FLAG_REMOVED | COORDINATE_NODE_FLAG_REMOVEING)))
+	if (pEntity_ == NULL || hasFlags((COORDINATE_NODE_FLAG_REMOVED | COORDINATE_NODE_FLAG_REMOVING)))
 		return -FLT_MAX;
 
 	return pEntity_->position().x;
@@ -335,7 +344,7 @@ float EntityCoordinateNode::xx() const
 //-------------------------------------------------------------------------------------
 float EntityCoordinateNode::yy() const
 {
-	if(pEntity_ == NULL /*|| hasFlags((COORDINATE_NODE_FLAG_REMOVED | COORDINATE_NODE_FLAG_REMOVEING))*/)
+	if(pEntity_ == NULL /*|| hasFlags((COORDINATE_NODE_FLAG_REMOVED | COORDINATE_NODE_FLAG_REMOVING))*/)
 		return -FLT_MAX;
 
 	return pEntity_->position().y;
@@ -344,7 +353,7 @@ float EntityCoordinateNode::yy() const
 //-------------------------------------------------------------------------------------
 float EntityCoordinateNode::zz() const
 {
-	if(pEntity_ == NULL /*|| hasFlags((COORDINATE_NODE_FLAG_REMOVED | COORDINATE_NODE_FLAG_REMOVEING))*/)
+	if(pEntity_ == NULL /*|| hasFlags((COORDINATE_NODE_FLAG_REMOVED | COORDINATE_NODE_FLAG_REMOVING))*/)
 		return -FLT_MAX;
 
 	return pEntity_->position().z;
@@ -353,13 +362,21 @@ float EntityCoordinateNode::zz() const
 //-------------------------------------------------------------------------------------
 void EntityCoordinateNode::update()
 {
+	// 在这里做一下更新的原因是，很可能在CoordinateNode::update()的过程中导致实体位置被移动
+	// 而导致次数update被调用，在某种情况下会出现问题
+	// 例如：// A->B, B-A（此时old_*是B）, A->B（此时old_*是B，而xx等目的地就是B）,此时update中会误判为没有移动。
+	// https://github.com/kbengine/kbengine/issues/407
+	old_xx(x());
+	old_yy(y());
+	old_zz(z());
+
 	CoordinateNode::update();
 
 	addFlags(COORDINATE_NODE_FLAG_ENTITY_NODE_UPDATING);
 	++entityNodeUpdating_;
 
 	// 此处必须使用watcherNodes_.size()而不能使用迭代器遍历，防止在update中导致增加了watcherNodes_数量而破坏迭代器
-	for (std::vector<CoordinateNode*>::size_type i = 0; i < watcherNodes_.size(); ++i)
+	for (WATCHER_NODES::size_type i = 0; i < watcherNodes_.size(); ++i)
 	{
 		CoordinateNode* pCoordinateNode = watcherNodes_[i];
 		if (!pCoordinateNode)
@@ -378,12 +395,12 @@ void EntityCoordinateNode::update()
 //-------------------------------------------------------------------------------------
 void EntityCoordinateNode::clearDelWatcherNodes()
 {
-	if (hasFlags((COORDINATE_NODE_FLAG_ENTITY_NODE_UPDATING | COORDINATE_NODE_FLAG_REMOVED | COORDINATE_NODE_FLAG_REMOVEING)))
+	if (hasFlags((COORDINATE_NODE_FLAG_ENTITY_NODE_UPDATING | COORDINATE_NODE_FLAG_REMOVED | COORDINATE_NODE_FLAG_REMOVING)))
 		return;
 
 	if (delWatcherNodeNum_ > 0)
 	{
-		std::vector<CoordinateNode*>::iterator iter = watcherNodes_.begin();
+		WATCHER_NODES::iterator iter = watcherNodes_.begin();
 		for (; iter != watcherNodes_.end();)
 		{
 			if (!(*iter))
@@ -405,7 +422,7 @@ void EntityCoordinateNode::clearDelWatcherNodes()
 //-------------------------------------------------------------------------------------
 void EntityCoordinateNode::onRemove()
 {
-	for (std::vector<CoordinateNode*>::size_type i = 0; i < watcherNodes_.size(); ++i)
+	for (WATCHER_NODES::size_type i = 0; i < watcherNodes_.size(); ++i)
 	{
 		CoordinateNode* pCoordinateNode = watcherNodes_[i];
 
@@ -429,22 +446,29 @@ bool EntityCoordinateNode::addWatcherNode(CoordinateNode* pNode)
 {
 	clearDelWatcherNodes();
 
-	std::vector<CoordinateNode*>::iterator iter = std::find(watcherNodes_.begin(), watcherNodes_.end(), pNode);
+	WATCHER_NODES::iterator iter = std::find(watcherNodes_.begin(), watcherNodes_.end(), pNode);
 	if(iter != watcherNodes_.end())
 		return false;
 
 	watcherNodes_.push_back(pNode);
+	
+	onAddWatcherNode(pNode);
 	return true;
+}
+
+//-------------------------------------------------------------------------------------
+void EntityCoordinateNode::onAddWatcherNode(CoordinateNode* pNode)
+{
 }
 
 //-------------------------------------------------------------------------------------
 bool EntityCoordinateNode::delWatcherNode(CoordinateNode* pNode)
 {
-	std::vector<CoordinateNode*>::iterator iter = std::find(watcherNodes_.begin(), watcherNodes_.end(), pNode);
+	WATCHER_NODES::iterator iter = std::find(watcherNodes_.begin(), watcherNodes_.end(), pNode);
 	if(iter == watcherNodes_.end())
 		return false;
 
-	if (hasFlags((COORDINATE_NODE_FLAG_ENTITY_NODE_UPDATING | COORDINATE_NODE_FLAG_REMOVED | COORDINATE_NODE_FLAG_REMOVEING)))
+	if (hasFlags((COORDINATE_NODE_FLAG_ENTITY_NODE_UPDATING | COORDINATE_NODE_FLAG_REMOVED | COORDINATE_NODE_FLAG_REMOVING)))
 	{
 		(*iter) = NULL;
 		++delWatcherNodeNum_;
