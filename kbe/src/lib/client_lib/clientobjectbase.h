@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -365,9 +365,9 @@ public:
 	ENTITY_ID getTargetID() const{ return targetID_; }
 	virtual void onTargetChanged(){}
 
-	ENTITY_ID getAoiEntityID(ENTITY_ID id);
-	ENTITY_ID getAoiEntityIDFromStream(MemoryStream& s);
-	ENTITY_ID getAoiEntityIDByAliasID(uint8 id);
+	ENTITY_ID getViewEntityID(ENTITY_ID id);
+	ENTITY_ID getViewEntityIDFromStream(MemoryStream& s);
+	ENTITY_ID getViewEntityIDByAliasID(uint8 id);
 
 	/** 
 		space相关操作接口
@@ -407,6 +407,11 @@ public:
 		服务器心跳返回
 	*/
 	void onAppActiveTickCB(Network::Channel* pChannel);
+
+	/**
+		允许脚本assert底层
+	*/
+	static PyObject* __py_assert(PyObject* self, PyObject* args);
 
 protected:				
 	int32													appID_;

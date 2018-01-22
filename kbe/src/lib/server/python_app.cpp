@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -37,6 +37,7 @@ public:
 		pyCallback_(callback),
 		scriptTimers_(scriptTimers)
 	{
+		Py_INCREF(pyCallback_);
 	}
 
 	~ScriptTimerHandler()
@@ -186,15 +187,19 @@ bool PythonApp::installPyScript()
 	pyPaths += user_scripts_path + L"data;";
 	pyPaths += user_scripts_path + L"user_type;";
 
-	switch(componentType_)
+	switch (componentType_)
 	{
 	case BASEAPP_TYPE:
 		pyPaths += user_scripts_path + L"server_common;";
 		pyPaths += user_scripts_path + L"base;";
+		pyPaths += user_scripts_path + L"base/interfaces;";
+		pyPaths += user_scripts_path + L"base/components;";
 		break;
 	case CELLAPP_TYPE:
 		pyPaths += user_scripts_path + L"server_common;";
 		pyPaths += user_scripts_path + L"cell;";
+		pyPaths += user_scripts_path + L"cell/interfaces;";
+		pyPaths += user_scripts_path + L"cell/components;";
 		break;
 	case DBMGR_TYPE:
 		pyPaths += user_scripts_path + L"server_common;";
@@ -214,6 +219,8 @@ bool PythonApp::installPyScript()
 		break;
 	default:
 		pyPaths += user_scripts_path + L"client;";
+		pyPaths += user_scripts_path + L"client/interfaces;";
+		pyPaths += user_scripts_path + L"client/components;";
 		break;
 	};
 	
@@ -759,7 +766,6 @@ PyObject* PythonApp::__py_addTimer(PyObject* self, PyObject* args)
 		S_Return;
 	}
 
-	Py_INCREF(pyCallback);
 	return PyLong_FromLong(id);
 }
 

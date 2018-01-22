@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -454,9 +454,9 @@ std::string Resmgr::getPySysResPath()
 
 	if(respath == "")
 	{
-		respath = matchRes("server/kbengine_defs.xml");
+		respath = matchRes("server/kbengine_defaults.xml");
 		std::vector<std::string> tmpvec;
-		tmpvec = KBEngine::strutil::kbe_splits(respath, "server/kbengine_defs.xml");
+		tmpvec = KBEngine::strutil::kbe_splits(respath, "server/kbengine_defaults.xml");
 
 		if(tmpvec.size() > 1)
 		{

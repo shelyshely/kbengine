@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -66,6 +66,10 @@ enum EntityDataFlagRelation
 	ENTITY_BROADCAST_OTHER_CLIENT_FLAGS								= ED_FLAG_OTHER_CLIENTS | ED_FLAG_ALL_CLIENTS,
 	// 所有需要广播给自己的客户端的标志
 	ENTITY_BROADCAST_OWN_CLIENT_FLAGS								= ED_FLAG_ALL_CLIENTS | ED_FLAG_CELL_PUBLIC_AND_OWN | ED_FLAG_OWN_CLIENT | ED_FLAG_BASE_AND_CLIENT,
+	// 所有baseapp与客户端有关的标志
+	ENTITY_BASEAPP_ANDA_CLIENT_DATA_FLAGS							= ED_FLAG_BASE_AND_CLIENT,
+	// 所有cellapp与客户端有关的标志
+	ENTITY_CELLAPP_ANDA_CLIENT_DATA_FLAGS							= ED_FLAG_ALL_CLIENTS | ED_FLAG_CELL_PUBLIC_AND_OWN | ED_FLAG_OTHER_CLIENTS | ED_FLAG_OWN_CLIENT,
 };
 
 /** mailbox类别所对应的组件类别映射，  这个表的索引个严格匹配ENTITY_MAILBOX_TYPE的值 */
@@ -131,7 +135,7 @@ enum ENTITY_BASE_PROPERTY_ALIASID
 };
 
 // 被限制的系统属性，def中不允许定义
-const char ENTITY_LIMITED_PROPERTYS[][32] =
+const char ENTITY_LIMITED_PROPERTYS[][34] =
 {
 	"id",
 	"position",
@@ -143,6 +147,7 @@ const char ENTITY_LIMITED_PROPERTYS[][32] =
 	"client",
 	"cellData",
 	"className",
+	"component"
 	"databaseID",
 	"isDestroyed",
 	"shouldAutoArchive",
@@ -160,6 +165,7 @@ const char ENTITY_LIMITED_PROPERTYS[][32] =
 	"otherClients",
 	"topSpeed",
 	"topSpeedY",
+	"interface"
 	"",
 };
 

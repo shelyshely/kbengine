@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -340,7 +340,7 @@ void DebugHelper::initialize(COMPONENT_TYPE componentType)
 			FILE * f = fopen(kbengine_xml_path.c_str(), "r");
 			if (f == NULL)
 			{
-				kbe_snprintf(helpConfig, MAX_PATH, "server/log4cxx_properties/%s.properties", COMPONENT_NAME_EX(componentType));
+				kbe_snprintf(helpConfig, MAX_PATH, "server/log4cxx_properties_defaults/%s.properties", COMPONENT_NAME_EX(componentType));
 				cfg = Resmgr::getSingleton().matchRes(helpConfig);
 			}
 			else
@@ -351,7 +351,7 @@ void DebugHelper::initialize(COMPONENT_TYPE componentType)
 		}
 		else
 		{
-			kbe_snprintf(helpConfig, MAX_PATH, "server/log4cxx_properties/%s.properties", COMPONENT_NAME_EX(componentType));
+			kbe_snprintf(helpConfig, MAX_PATH, "server/log4cxx_properties_defaults/%s.properties", COMPONENT_NAME_EX(componentType));
 			cfg = Resmgr::getSingleton().matchRes(helpConfig);
 		}
 

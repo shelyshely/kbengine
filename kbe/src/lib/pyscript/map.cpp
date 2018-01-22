@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -172,9 +172,13 @@ PyObject* Map::__py_get(PyObject* self, PyObject* args)
 	if (!pyObj)
 	{
 		if (PySequence_Size(args) > 1)
+		{
 			return PySequence_GetItem(args, 1);
+		}
 		else
-			PyErr_SetObject(PyExc_KeyError, args);
+		{
+			S_Return;
+		}
 	}
 	else
 	{

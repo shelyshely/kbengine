@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -110,7 +110,7 @@ PyObject* ClientEntityMethod::callmethod(PyObject* args, PyObject* kwds)
 		return 0;
 	}
 			
-	EntityRef* pEntityRef = srcEntity->pWitness()->getAOIEntityRef(clientEntityID_);
+	EntityRef* pEntityRef = srcEntity->pWitness()->getViewEntityRef(clientEntityID_);
 	Entity* e = (pEntityRef && ((pEntityRef->flags() & (ENTITYREF_FLAG_ENTER_CLIENT_PENDING | ENTITYREF_FLAG_LEAVE_CLIENT_PENDING)) <= 0))
 		? pEntityRef->pEntity() : NULL;
 
@@ -131,14 +131,14 @@ PyObject* ClientEntityMethod::callmethod(PyObject* args, PyObject* kwds)
 		methodDescription->addToStream(mstream, args);
 		
 		Network::Bundle* pSendBundle = pChannel->createSendBundle();
-		NETWORK_ENTITY_MESSAGE_FORWARD_CLIENT_START(srcEntity->id(), (*pSendBundle));
+		NETWORK_ENTITY_MESSAGE_FORWARD_CLIENT_BEGIN(srcEntity->id(), (*pSendBundle));
 
 		int ialiasID = -1;
 		const Network::MessageHandler& msgHandler = 
-				srcEntity->pWitness()->getAOIEntityMessageHandler(ClientInterface::onRemoteMethodCall, 
+				srcEntity->pWitness()->getViewEntityMessageHandler(ClientInterface::onRemoteMethodCall,
 				ClientInterface::onRemoteMethodCallOptimized, clientEntityID_, ialiasID);
 
-		ENTITY_MESSAGE_FORWARD_CLIENT_START(pSendBundle, msgHandler, aOIEntityMessage);
+		ENTITY_MESSAGE_FORWARD_CLIENT_BEGIN(pSendBundle, msgHandler, viewEntityMessage);
 
 		if(ialiasID != -1)
 		{
@@ -179,7 +179,7 @@ PyObject* ClientEntityMethod::callmethod(PyObject* args, PyObject* kwds)
 				DebugHelper::getSingleton().changeLogger(COMPONENT_NAME_EX(g_componentType));																				
 		}
 
-		ENTITY_MESSAGE_FORWARD_CLIENT_END(pSendBundle, msgHandler, aOIEntityMessage);
+		ENTITY_MESSAGE_FORWARD_CLIENT_END(pSendBundle, msgHandler, viewEntityMessage);
 
 		// 记录这个事件产生的数据量大小
 		g_publicClientEventHistoryStats.trackEvent(srcEntity->scriptName(), 

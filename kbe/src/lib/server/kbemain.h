@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -82,8 +82,8 @@ inline void loadConfig()
 {
 	Resmgr::getSingleton().initialize();
 
-	// "../../res/server/kbengine_defs.xml"
-	g_kbeSrvConfig.loadConfig("server/kbengine_defs.xml");
+	// "../../res/server/kbengine_defaults.xml"
+	g_kbeSrvConfig.loadConfig("server/kbengine_defaults.xml");
 
 	// "../../../assets/res/server/kbengine.xml"
 	g_kbeSrvConfig.loadConfig("server/kbengine.xml");
@@ -283,6 +283,45 @@ inline void parseMainCommandArgs(int argc, char* argv[])
 #else
 #endif
 				}
+			}
+
+			continue;
+		}
+
+		findcmd = "--KBE_ROOT=";
+		fi1 = cmd.find(findcmd);
+		if (fi1 != std::string::npos)
+		{
+			cmd.erase(fi1, findcmd.size());
+			if (cmd.size() > 0)
+			{
+				setenv("KBE_ROOT", cmd.c_str(), 1);
+			}
+
+			continue;
+		}
+
+		findcmd = "--KBE_RES_PATH=";
+		fi1 = cmd.find(findcmd);
+		if (fi1 != std::string::npos)
+		{
+			cmd.erase(fi1, findcmd.size());
+			if (cmd.size() > 0)
+			{
+				setenv("KBE_RES_PATH", cmd.c_str(), 1);
+			}
+
+			continue;
+		}
+
+		findcmd = "--KBE_BIN_PATH=";
+		fi1 = cmd.find(findcmd);
+		if (fi1 != std::string::npos)
+		{
+			cmd.erase(fi1, findcmd.size());
+			if (cmd.size() > 0)
+			{
+				setenv("KBE_BIN_PATH", cmd.c_str(), 1);
 			}
 
 			continue;

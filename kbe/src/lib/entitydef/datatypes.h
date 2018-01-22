@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -40,6 +40,7 @@ class DataTypes
 public:	
 	typedef std::map<std::string, DataTypePtr> DATATYPE_MAP;
 	typedef std::map<DATATYPE_UID, DataType*> UID_DATATYPE_MAP;
+	typedef std::vector< std::string > DATATYPE_ORDERS;
 
 	DataTypes();
 	virtual ~DataTypes();	
@@ -55,15 +56,19 @@ public:
 	static DataType* getDataType(const char* name);
 	static DataType* getDataType(DATATYPE_UID uid);
 
-	static bool loadAlias(std::string& file);
+	static bool loadTypes(std::string& file);
 
 	static const DATATYPE_MAP& dataTypes(){ return dataTypes_; }
 	static const UID_DATATYPE_MAP& uid_dataTypes(){ return uid_dataTypes_; }
+	static const DATATYPE_ORDERS& dataTypesOrders() { return dataTypesOrders_; }
 
 protected:
 	static DATATYPE_MAP dataTypes_;
 	static DATATYPE_MAP dataTypesLowerName_;
 	static UID_DATATYPE_MAP uid_dataTypes_;
+
+	// 类型定义的先后顺序，用于代码生成， c++等语言需要先后顺序依赖
+	static DATATYPE_ORDERS dataTypesOrders_;
 };
 
 }

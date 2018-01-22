@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -161,8 +161,8 @@ bool EntityDef::initialize(std::vector<PyTypeObject*>& scriptBaseTypes,
 	ENTITY_SCRIPT_UID utype = 1;
 	
 	// 初始化数据类别
-	// assets/scripts/entity_defs/alias.xml
-	if(!DataTypes::initialize(defFilePath + "alias.xml"))
+	// assets/scripts/entity_defs/types.xml
+	if(!DataTypes::initialize(defFilePath + "types.xml"))
 		return false;
 
 	// 打开这个entities.xml文件
@@ -436,13 +436,19 @@ bool EntityDef::loadInterfaces(const std::string& defFilePath,
 							   TiXmlNode* defNode, 
 							   ScriptDefModule* pScriptModule)
 {
-	TiXmlNode* implementsNode = defxml->enterNode(defNode, "Implements");
+	TiXmlNode* implementsNode = defxml->enterNode(defNode, "Interfaces");
 	if(implementsNode == NULL)
 		return true;
 
 	XML_FOR_BEGIN(implementsNode)
 	{
+		if (defxml->getKey(implementsNode) != "Interface")
+			continue;
+
 		TiXmlNode* interfaceNode = defxml->enterNode(implementsNode, "Interface");
+		if (!interfaceNode)
+			continue;
+
 		std::string interfaceName = defxml->getKey(interfaceNode);
 		std::string interfacefile = defFilePath + "interfaces/" + interfaceName + ".def";
 		SmartPointer<XML> interfaceXml(new XML());
@@ -687,7 +693,7 @@ bool EntityDef::loadDefPropertys(const std::string& moduleName,
 				if(strType == "ARRAY")
 				{
 					FixedArrayType* dataType1 = new FixedArrayType();
-					if(dataType1->initialize(xml, typeNode))
+					if(dataType1->initialize(xml, typeNode, moduleName + "_" + name))
 						dataType = dataType1;
 					else
 						return false;
@@ -903,7 +909,7 @@ bool EntityDef::loadDefCellMethods(const std::string& moduleName,
 						if(strType == "ARRAY")
 						{
 							FixedArrayType* dataType1 = new FixedArrayType();
-							if(dataType1->initialize(xml, typeNode))
+							if(dataType1->initialize(xml, typeNode, moduleName + "_" + name))
 								dataType = dataType1;
 						}
 						else
@@ -1046,7 +1052,7 @@ bool EntityDef::loadDefBaseMethods(const std::string& moduleName, XML* xml,
 						if(strType == "ARRAY")
 						{
 							FixedArrayType* dataType1 = new FixedArrayType();
-							if(dataType1->initialize(xml, typeNode))
+							if(dataType1->initialize(xml, typeNode, moduleName + "_" + name))
 								dataType = dataType1;
 						}
 						else
@@ -1185,7 +1191,7 @@ bool EntityDef::loadDefClientMethods(const std::string& moduleName, XML* xml,
 						if(strType == "ARRAY")
 						{
 							FixedArrayType* dataType1 = new FixedArrayType();
-							if(dataType1->initialize(xml, typeNode))
+							if(dataType1->initialize(xml, typeNode, moduleName + "_" + name))
 								dataType = dataType1;
 						}
 						else
@@ -1323,6 +1329,11 @@ bool EntityDef::isLoadScriptModule(ScriptDefModule* pScriptModule)
 
 			break;
 		}
+	case TOOL_TYPE:
+	{
+		return false;
+		break;
+	}
 	default:
 		{
 			if(!pScriptModule->hasCell())
@@ -1374,8 +1385,8 @@ bool EntityDef::checkDefMethod(ScriptDefModule* pScriptModule,
 		}
 		else
 		{
-			ERROR_MSG(fmt::format("EntityDef::checkDefMethod: class {} does not have method[{}].\n",
-					moduleName.c_str(), iter->first.c_str()));
+			ERROR_MSG(fmt::format("EntityDef::checkDefMethod: class {} does not have method[{}], defined in {}.def!\n",
+				moduleName.c_str(), iter->first.c_str(), moduleName));
 
 			return false;
 		}

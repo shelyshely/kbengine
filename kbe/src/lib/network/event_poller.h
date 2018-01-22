@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -59,6 +59,7 @@ public:
 
 	InputNotificationHandler* findForRead(int fd);
 	OutputNotificationHandler* findForWrite(int fd);
+
 protected:
 	virtual bool doRegisterForRead(int fd) = 0;
 	virtual bool doRegisterForWrite(int fd) = 0;

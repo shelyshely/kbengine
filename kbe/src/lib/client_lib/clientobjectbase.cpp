@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -42,6 +42,7 @@ SCRIPT_DIRECT_METHOD_DECLARE("cancelCallback",		__py_cancelCallback,		METH_VARAR
 SCRIPT_DIRECT_METHOD_DECLARE("getWatcher",			__py_getWatcher,			METH_VARARGS,					0)
 SCRIPT_DIRECT_METHOD_DECLARE("getWatcherDir",		__py_getWatcherDir,			METH_VARARGS,					0)
 SCRIPT_DIRECT_METHOD_DECLARE("disconnect",			__py_disconnect,			METH_VARARGS,					0)
+SCRIPT_DIRECT_METHOD_DECLARE("kbassert",			__py_assert,				METH_VARARGS,					0)
 SCRIPT_METHOD_DECLARE_END()
 
 SCRIPT_MEMBER_DECLARE_BEGIN(ClientObjectBase)
@@ -383,7 +384,7 @@ client::Entity* ClientObjectBase::createEntity(const char* entityType, PyObject*
 }
 
 //-------------------------------------------------------------------------------------
-ENTITY_ID ClientObjectBase::getAoiEntityID(ENTITY_ID id)
+ENTITY_ID ClientObjectBase::getViewEntityID(ENTITY_ID id)
 {
 	if(id <= 255 && EntityDef::entityAliasID() && pEntityIDAliasIDList_.size() <= 255)
 	{
@@ -394,7 +395,7 @@ ENTITY_ID ClientObjectBase::getAoiEntityID(ENTITY_ID id)
 }
 
 //-------------------------------------------------------------------------------------
-ENTITY_ID ClientObjectBase::getAoiEntityIDFromStream(MemoryStream& s)
+ENTITY_ID ClientObjectBase::getViewEntityIDFromStream(MemoryStream& s)
 {
 	ENTITY_ID id = 0;
 
@@ -426,7 +427,7 @@ ENTITY_ID ClientObjectBase::getAoiEntityIDFromStream(MemoryStream& s)
 }
 
 //-------------------------------------------------------------------------------------
-ENTITY_ID ClientObjectBase::getAoiEntityIDByAliasID(uint8 id)
+ENTITY_ID ClientObjectBase::getViewEntityIDByAliasID(uint8 id)
 {
 	return pEntityIDAliasIDList_[id];
 }
@@ -942,7 +943,7 @@ void ClientObjectBase::onEntityEnterWorld(Network::Channel * pChannel, MemoryStr
 //-------------------------------------------------------------------------------------	
 void ClientObjectBase::onEntityLeaveWorldOptimized(Network::Channel * pChannel, MemoryStream& s)
 {
-	onEntityLeaveWorld(pChannel, getAoiEntityIDFromStream(s));
+	onEntityLeaveWorld(pChannel, getViewEntityIDFromStream(s));
 }
 
 //-------------------------------------------------------------------------------------	
@@ -1080,7 +1081,7 @@ void ClientObjectBase::onEntityDestroyed(Network::Channel * pChannel, ENTITY_ID 
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onRemoteMethodCallOptimized(Network::Channel * pChannel, KBEngine::MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 	onRemoteMethodCall_(eid, s);
 }
 
@@ -1117,7 +1118,7 @@ void ClientObjectBase::onUpdatePropertys(Network::Channel * pChannel, MemoryStre
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdatePropertysOptimized(Network::Channel * pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 	onUpdatePropertys_(eid, s);
 }
 
@@ -1356,7 +1357,7 @@ void ClientObjectBase::onSetEntityPosAndDir(Network::Channel* pChannel, MemorySt
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	client::Entity* entity = pEntities_->find(eid);
 	if(entity == NULL)
@@ -1369,7 +1370,7 @@ void ClientObjectBase::onUpdateData(Network::Channel* pChannel, MemoryStream& s)
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_ypr(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float y, p, r;
 
@@ -1390,7 +1391,7 @@ void ClientObjectBase::onUpdateData_ypr(Network::Channel* pChannel, MemoryStream
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_yp(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float y, p;
 
@@ -1408,7 +1409,7 @@ void ClientObjectBase::onUpdateData_yp(Network::Channel* pChannel, MemoryStream&
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_yr(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float y, r;
 
@@ -1426,7 +1427,7 @@ void ClientObjectBase::onUpdateData_yr(Network::Channel* pChannel, MemoryStream&
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_pr(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float p, r;
 
@@ -1444,7 +1445,7 @@ void ClientObjectBase::onUpdateData_pr(Network::Channel* pChannel, MemoryStream&
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_y(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float y;
 
@@ -1459,7 +1460,7 @@ void ClientObjectBase::onUpdateData_y(Network::Channel* pChannel, MemoryStream& 
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_p(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float p;
 
@@ -1474,7 +1475,7 @@ void ClientObjectBase::onUpdateData_p(Network::Channel* pChannel, MemoryStream& 
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_r(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float r;
 
@@ -1489,7 +1490,7 @@ void ClientObjectBase::onUpdateData_r(Network::Channel* pChannel, MemoryStream& 
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_xz(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float x,z;
 
@@ -1502,7 +1503,7 @@ void ClientObjectBase::onUpdateData_xz(Network::Channel* pChannel, MemoryStream&
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_xz_ypr(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float x, z, y, p, r;
 	
@@ -1525,7 +1526,7 @@ void ClientObjectBase::onUpdateData_xz_ypr(Network::Channel* pChannel, MemoryStr
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_xz_yp(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float x,z, y, p;
 
@@ -1545,7 +1546,7 @@ void ClientObjectBase::onUpdateData_xz_yp(Network::Channel* pChannel, MemoryStre
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_xz_yr(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float x, z, y,  r;
 	
@@ -1565,7 +1566,7 @@ void ClientObjectBase::onUpdateData_xz_yr(Network::Channel* pChannel, MemoryStre
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_xz_pr(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float x, z, p, r;
 	
@@ -1585,7 +1586,7 @@ void ClientObjectBase::onUpdateData_xz_pr(Network::Channel* pChannel, MemoryStre
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_xz_y(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float x, z, y;
 	
@@ -1602,7 +1603,7 @@ void ClientObjectBase::onUpdateData_xz_y(Network::Channel* pChannel, MemoryStrea
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_xz_p(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float x, z, p;
 	
@@ -1619,7 +1620,7 @@ void ClientObjectBase::onUpdateData_xz_p(Network::Channel* pChannel, MemoryStrea
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_xz_r(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float x, z, r;
 	
@@ -1636,7 +1637,7 @@ void ClientObjectBase::onUpdateData_xz_r(Network::Channel* pChannel, MemoryStrea
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_xyz(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float x, z, y;
 	
@@ -1649,7 +1650,7 @@ void ClientObjectBase::onUpdateData_xyz(Network::Channel* pChannel, MemoryStream
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_xyz_ypr(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float x, z, y;
 	
@@ -1675,7 +1676,7 @@ void ClientObjectBase::onUpdateData_xyz_ypr(Network::Channel* pChannel, MemorySt
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_xyz_yp(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float x, z, y;
 	
@@ -1698,7 +1699,7 @@ void ClientObjectBase::onUpdateData_xyz_yp(Network::Channel* pChannel, MemoryStr
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_xyz_yr(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float x, z, y;
 	
@@ -1721,7 +1722,7 @@ void ClientObjectBase::onUpdateData_xyz_yr(Network::Channel* pChannel, MemoryStr
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_xyz_pr(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float x, z, y;
 	
@@ -1744,7 +1745,7 @@ void ClientObjectBase::onUpdateData_xyz_pr(Network::Channel* pChannel, MemoryStr
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_xyz_y(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float x, z, y;
 	
@@ -1764,7 +1765,7 @@ void ClientObjectBase::onUpdateData_xyz_y(Network::Channel* pChannel, MemoryStre
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_xyz_p(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float x, z, y;
 	
@@ -1784,7 +1785,7 @@ void ClientObjectBase::onUpdateData_xyz_p(Network::Channel* pChannel, MemoryStre
 //-------------------------------------------------------------------------------------
 void ClientObjectBase::onUpdateData_xyz_r(Network::Channel* pChannel, MemoryStream& s)
 {
-	ENTITY_ID eid = getAoiEntityIDFromStream(s);
+	ENTITY_ID eid = getViewEntityIDFromStream(s);
 
 	float x, z, y;
 	
@@ -2301,6 +2302,13 @@ PyObject* ClientObjectBase::__py_disconnect(PyObject* self, PyObject* args)
 void ClientObjectBase::onAppActiveTickCB(Network::Channel* pChannel)
 {
 	pChannel->updateLastReceivedTime();
+}
+
+//-------------------------------------------------------------------------------------
+PyObject* ClientObjectBase::__py_assert(PyObject* self, PyObject* args)
+{
+	KBE_ASSERT(false && "kbassert");
+	return NULL;
 }
 
 //-------------------------------------------------------------------------------------		

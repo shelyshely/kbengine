@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -254,8 +254,23 @@ PyObject* FixedArray::__py_pop(PyObject* self, PyObject* args, PyObject* kwargs)
 		return NULL;
 	}
 
-	PyObject* pyItem = PyTuple_GetItem(args, 0);
-	int index = PyLong_AsLong(pyItem);
+	int index = 0;
+
+	if (PyTuple_Size(args) > 0)
+	{
+		PyObject* pyItem = PyTuple_GetItem(args, 0);
+
+		if (pyItem)
+		{
+			index = PyLong_AsLong(pyItem);
+		}
+		else
+		{
+			SCRIPT_ERROR_CHECK();
+			return NULL;
+		}
+	}
+
 	if (index < 0) index += (int)values.size();
 	if (uint32(index) >= values.size())
 	{

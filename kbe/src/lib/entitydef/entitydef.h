@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -201,7 +201,7 @@ private:
 
 	static bool _isInit;
 
-	static bool __entityAliasID;												// 优化EntityID，aoi范围内小于255个EntityID, 传输到client时使用1字节伪ID 
+	static bool __entityAliasID;												// 优化EntityID，view范围内小于255个EntityID, 传输到client时使用1字节伪ID 
 	static bool __entitydefAliasID;												// 优化entity属性和方法广播时占用的带宽，entity客户端属性或者客户端不超过255个时， 方法uid和属性uid传输到client时使用1字节别名ID
 };
 

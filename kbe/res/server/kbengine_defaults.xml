@@ -169,7 +169,7 @@
 	<!-- 关服倒计时(秒) 
 		(Countdown to shutdown the server(seconds))
 	-->
-	<shutdown_time> 10.0 </shutdown_time>
+	<shutdown_time> 30.0 </shutdown_time>
 	
 	<!-- 关闭服务器的时候， 如果有未完成的任务， 服务器需要等待任务结束。
 		每Tick（秒）检查一次
@@ -197,7 +197,7 @@
 	<!-- Email服务, 提供账号验证， 密码找回等等。
 		(Email services, providing the account verification, password recovery, etc.)
 	-->
-	<email_service_config>server/email_service.xml</email_service_config>
+	<email_service_config>server/email_service_defaults.xml</email_service_config>
 		
 	<interfaces>
 		<!-- 脚本入口模块， 相当于main函数 
@@ -227,7 +227,7 @@
 		-->
 		<telnet_service>
 			<port> 33000 </port>
-			<password> kbe </password>
+			<password> pwd123456 </password>
 			<!-- 命令默认层 
 				(layer of default the command)
 			-->
@@ -297,7 +297,7 @@
 				-->
 				<auth>  
 					<username> kbe </username>									<!-- Type: String -->
-					<password> kbe </password>									<!-- Type: String -->
+					<password> pwd123456 </password>							<!-- Type: String -->
 					
 					<!-- 为true则表示password是加密(rsa)的, 可防止明文配置 
 						(is true, password is RSA)
@@ -378,7 +378,7 @@
 		-->
 		<telnet_service>
 			<port> 32000 </port>
-			<password> kbe </password>
+			<password> pwd123456 </password>
 			<!-- 命令默认层 
 				(layer of default the command)
 			-->
@@ -399,16 +399,16 @@
 		-->
 		<entryScriptFile> kbemain </entryScriptFile>
 		
-		<!-- 默认AOI半径, 脚本中可以改变它 
-			(Default AOI radius, the script can change it)
+		<!-- 默认View半径, 脚本中可以改变它 
+			(Default View radius, the script can change it)
 		-->
-		<defaultAoIRadius>			
+		<defaultViewRadius>			
 			<radius> 80.0 </radius>
 			<hysteresisArea> 5.0 </hysteresisArea>
-		</defaultAoIRadius>
+		</defaultViewRadius>
 		
-		<!-- 优化EntityID，AOI范围内实体数小于255个, EntityID传输到client时使用1字节别名ID 
-			（Optimization EntityID，AOI the Entity is less than 255, 
+		<!-- 优化EntityID，View范围内实体数小于255个, EntityID传输到client时使用1字节别名ID 
+			（Optimization EntityID，View the Entity is less than 255, 
 			use an aliasID(1byte) transmitted to the client)
 		-->
 		<aliasEntityID> true </aliasEntityID>
@@ -458,16 +458,16 @@
 		-->
 		<ghostUpdateHertz> 30 </ghostUpdateHertz>		<!-- Type: Integer -->
 		
-		<!-- 是否使用坐标系统, 如果设置为false， 那么AOI、Trap、 Move等功能将不可用 
+		<!-- 是否使用坐标系统, 如果设置为false， 那么View、Trap、 Move等功能将不可用 
 			(Whether the use of coordinate-system, if is false, 
-			AOI, Trap, Move and other functions will not be available)
+			View, Trap, Move and other functions will not be available)
 		-->
 		<coordinate_system> 
 			<enable> true </enable>
 			
-			<!-- 是否管理y轴? 注：管理y轴，则AOI、Trap等功能有了高度，当space内的实体较少时比较好用，
+			<!-- 是否管理y轴? 注：管理y轴，则View、Trap等功能有了高度，当space内的实体较少时比较好用，
 				否则y轴的管理会带来一些消耗 
-				(is maintenance Y axis? Note: Management y axis, AOI、Trap and other functions with the height,
+				(is maintenance Y axis? Note: Management y axis, View、Trap and other functions with the height,
 				When the entity space within little more useful when, Otherwise, 
 				the management of the y-axis will produce some consumption
 				-->
@@ -486,7 +486,7 @@
 		-->
 		<telnet_service>
 			<port> 50000 </port>
-			<password> kbe </password>
+			<password> pwd123456 </password>
 			<!-- 命令默认层 
 				(layer of default the command)
 			-->
@@ -611,7 +611,7 @@
 		-->
 		<telnet_service>
 			<port> 40000 </port>
-			<password> kbe </password>
+			<password> pwd123456 </password>
 			<!-- 命令默认层 
 				(layer of default the command)
 			-->
@@ -723,7 +723,7 @@
 		-->
 		<telnet_service>
 			<port> 31000 </port>
-			<password> kbe </password>
+			<password> pwd123456 </password>
 			<!-- 命令默认层 
 				(layer of default the command)
 			-->
@@ -808,7 +808,7 @@
 		-->
 		<telnet_service>
 			<port> 51000 </port>
-			<password> kbe </password>
+			<password> pwd123456 </password>
 			<!-- 命令默认层 
 				(layer of default the command)
 			-->
@@ -842,7 +842,7 @@
 		-->
 		<telnet_service>
 			<port> 34000 </port>
-			<password> kbe </password>
+			<password> pwd123456 </password>
 			<!-- 命令默认层 
 				(layer of default the command)
 			-->

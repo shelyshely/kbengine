@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -47,7 +47,8 @@ exposedMessages_()
 	if(g_fm == NULL)
 		g_fm = new Network::FixedMessages;
 
-	Network::FixedMessages::getSingleton().loadConfig("server/messages_fixed.xml");
+	Network::FixedMessages::getSingleton().loadConfig("server/messages_fixed_defaults.xml");
+	Network::FixedMessages::getSingleton().loadConfig("server/messages_fixed.xml", false);
 	messageHandlers().push_back(this);
 }
 
@@ -233,49 +234,89 @@ MessageHandler* MessageHandlers::add(std::string ihName, MessageArgs* args,
 std::string MessageHandlers::getDigestStr()
 {
 	static KBE_MD5 md5;
+	int32 isize = 0;
 
 	if(!md5.isFinal())
 	{
 		std::map<uint16, std::pair< std::string, std::string> > errsDescrs;
 
-		TiXmlNode *rootNode = NULL;
-		SmartPointer<XML> xml(new XML(Resmgr::getSingleton().matchRes("server/server_errors.xml").c_str()));
-
-		if(!xml->isGood())
 		{
-			ERROR_MSG(fmt::format("MessageHandlers::getDigestStr(): load {} is failed!\n",
-				Resmgr::getSingleton().matchRes("server/server_errors.xml")));
+			TiXmlNode *rootNode = NULL;
+			SmartPointer<XML> xml(new XML(Resmgr::getSingleton().matchRes("server/server_errors_defaults.xml").c_str()));
 
-			return "";
+			if (!xml->isGood())
+			{
+				ERROR_MSG(fmt::format("MessageHandlers::getDigestStr(): load {} is failed!\n",
+					Resmgr::getSingleton().matchRes("server/server_errors_defaults.xml")));
+
+				return "";
+			}
+
+			rootNode = xml->getRootNode();
+			if (rootNode == NULL)
+			{
+				// root节点下没有子节点了
+				return "";
+			}
+
+			XML_FOR_BEGIN(rootNode)
+			{
+				TiXmlNode* node = xml->enterNode(rootNode->FirstChild(), "id");
+				TiXmlNode* node1 = xml->enterNode(rootNode->FirstChild(), "descr");
+
+				int32 val1 = xml->getValInt(node);
+				md5.append((void*)&val1, sizeof(int32));
+
+				std::string val2 = xml->getKey(rootNode);
+				md5.append((void*)val2.c_str(), val2.size());
+
+				std::string val3 = xml->getVal(node1);
+				md5.append((void*)val3.c_str(), val3.size());
+				isize++;
+			}
+			XML_FOR_END(rootNode);
+
+			md5.append((void*)&isize, sizeof(int32));
 		}
 
-		int32 isize = 0;
-
-		rootNode = xml->getRootNode();
-		if(rootNode == NULL)
 		{
-			// root节点下没有子节点了
-			return "";
+			TiXmlNode *rootNode = NULL;
+
+			FILE* f = Resmgr::getSingleton().openRes("server/server_errors.xml");
+
+			if (f)
+			{
+				fclose(f);
+
+				SmartPointer<XML> xml(new XML(Resmgr::getSingleton().matchRes("server/server_errors.xml").c_str()));
+
+				if (xml->isGood())
+				{
+					rootNode = xml->getRootNode();
+					if (rootNode)
+					{
+						XML_FOR_BEGIN(rootNode)
+						{
+							TiXmlNode* node = xml->enterNode(rootNode->FirstChild(), "id");
+							TiXmlNode* node1 = xml->enterNode(rootNode->FirstChild(), "descr");
+
+							int32 val1 = xml->getValInt(node);
+							md5.append((void*)&val1, sizeof(int32));
+
+							std::string val2 = xml->getKey(rootNode);
+							md5.append((void*)val2.c_str(), val2.size());
+
+							std::string val3 = xml->getVal(node1);
+							md5.append((void*)val3.c_str(), val3.size());
+							isize++;
+						}
+						XML_FOR_END(rootNode);
+					}
+				}
+			}
+
+			md5.append((void*)&isize, sizeof(int32));
 		}
-
-		XML_FOR_BEGIN(rootNode)
-		{
-			TiXmlNode* node = xml->enterNode(rootNode->FirstChild(), "id");
-			TiXmlNode* node1 = xml->enterNode(rootNode->FirstChild(), "descr");
-
-			int32 val1 = xml->getValInt(node);
-			md5.append((void*)&val1, sizeof(int32));
-
-			std::string val2 = xml->getKey(rootNode);
-			md5.append((void*)val2.c_str(), val2.size());
-
-			std::string val3 = xml->getVal(node1);
-			md5.append((void*)val3.c_str(), val3.size());
-			isize++;
-		}
-		XML_FOR_END(rootNode);
-
-		md5.append((void*)&isize, sizeof(int32));
 
 		std::vector<MessageHandlers*>& msgHandlers = messageHandlers();
 		isize += msgHandlers.size();

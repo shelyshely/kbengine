@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -18,36 +18,20 @@ You should have received a copy of the GNU Lesser General Public License
 along with KBEngine.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef KBE_AOI_TRIGGER_H
-#define KBE_AOI_TRIGGER_H
+#ifndef KBE_APP_PROFILE_H
+#define KBE_APP_PROFILE_H
 
-#include "range_trigger.h"
+#include "common/common.h"
+#include "helper/debug_helper.h"
+#include "helper/profile.h"
+#include "helper/eventhistory_stats.h"
 
 namespace KBEngine{
 
-class Witness;
+extern ProfileVal SCRIPTCALL_PROFILE;
 
-class AOITrigger : public RangeTrigger
-{
-public:
-	AOITrigger(CoordinateNode* origin, float xz = 0.0f, float y = 0.0f);
-	virtual ~AOITrigger();
-	
-	/**
-		某个节点进入或者离开了rangeTrigger
-	*/
-	virtual void onEnter(CoordinateNode * pNode);
-	virtual void onLeave(CoordinateNode * pNode);
-
-	INLINE Witness* pWitness() const;
-
-protected:
-	Witness* pWitness_;
-};
+extern EventHistoryStats g_privateClientEventHistoryStats;
+extern EventHistoryStats g_publicClientEventHistoryStats;
 
 }
-
-#ifdef CODE_INLINE
-#include "aoi_trigger.inl"
-#endif
 #endif

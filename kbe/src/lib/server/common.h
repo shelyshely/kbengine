@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -50,7 +50,7 @@ namespace KBEngine {
 	SENDBUNDLE.append(FORWARDBUNDLE);	
 
 // cellapp转发消息给客户端开始
-#define NETWORK_ENTITY_MESSAGE_FORWARD_CLIENT_START(ENTITYID, SENDBUNDLE)																\
+#define NETWORK_ENTITY_MESSAGE_FORWARD_CLIENT_BEGIN(ENTITYID, SENDBUNDLE)																\
 	SENDBUNDLE.newMessage(BaseappInterface::forwardMessageToClientFromCellapp);															\
 	SENDBUNDLE << ENTITYID;																												\
 
@@ -99,7 +99,7 @@ namespace KBEngine {
 
 
 // cellapp转发消息给客户端消息包追加消息(直接在SENDBUNDLE追加)
-#define ENTITY_MESSAGE_FORWARD_CLIENT_START(SENDBUNDLE, MESSAGEHANDLE, ACTIONNAME)														\
+#define ENTITY_MESSAGE_FORWARD_CLIENT_BEGIN(SENDBUNDLE, MESSAGEHANDLE, ACTIONNAME)														\
 	(*SENDBUNDLE) << MESSAGEHANDLE.msgID;																								\
 	size_t currMsgLengthPos_##ACTIONNAME = 0;																							\
 	Network::Packet* pCurrPacket_##ACTIONNAME = SENDBUNDLE->pCurrPacket();																\
@@ -219,8 +219,12 @@ inline uint64 secondsToStamps(float seconds)
 #define KBE_NEXT_ONLY								2
 
 /** c/c++数据类别转换成KBEDataTypeID */
+#define KBE_DATATYPE2ID_MAX							20
 uint16 datatype2id(std::string datatype);
 
+/** c/c++数据类别转换成原生类别UINT16 ... */
+std::string datatype2nativetype(std::string datatype);
+std::string datatype2nativetype(uint16 datatype);
 
 }
 

@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -422,6 +422,15 @@ void Bundle::debugCurrentMessages(MessageID currMsgID, const Network::MessageHan
 			currMsgLength += NETWORK_MESSAGE_LENGTH1_SIZE;
 	}
 	
+	if (currMsgLength >= MemoryStream::MAX_SIZE)
+	{
+		DebugHelper::getSingleton().set_errorcolor();
+		printf("%s", fmt::format("ERROR: Bundle::debugCurrentMessages(): is too big, size=%d\n", currMsgLength).c_str());
+		DebugHelper::getSingleton().set_normalcolor();
+		
+		return;
+	}
+
 	MemoryStream* pMemoryStream = MemoryStream::createPoolObject();
 	
 	// 通过消息长度找到消息头，然后将消息内容输出

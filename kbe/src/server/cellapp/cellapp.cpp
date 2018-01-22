@@ -2,7 +2,7 @@
 This source file is part of KBEngine
 For the latest info, see http://www.kbengine.org/
 
-Copyright (c) 2008-2017 KBEngine.
+Copyright (c) 2008-2018 KBEngine.
 
 KBEngine is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -24,7 +24,7 @@ along with KBEngine.  If not, see <http://www.gnu.org/licenses/>.
 #include "profile.h"
 #include "witness.h"
 #include "coordinate_node.h"
-#include "aoi_trigger.h"
+#include "view_trigger.h"
 #include "watch_obj_pools.h"
 #include "cellapp_interface.h"
 #include "entity_remotemethod.h"
@@ -224,6 +224,7 @@ bool Cellapp::uninstallPyModules()
 	S_RELEASE(pCellAppData_); 
 
 	Entity::uninstallScript();
+	GlobalDataClient::uninstallScript();
 	return EntityApp<Entity>::uninstallPyModules();
 }
 
@@ -1891,8 +1892,8 @@ void Cellapp::reqTeleportToCellApp(Network::Channel* pChannel, MemoryStream& s)
 	if (e->clientMailbox())
 	{
 		Network::Bundle* pSendBundle = Network::Bundle::createPoolObject();
-		NETWORK_ENTITY_MESSAGE_FORWARD_CLIENT_START(e->id(), (*pSendBundle));
-		ENTITY_MESSAGE_FORWARD_CLIENT_START(pSendBundle, ClientInterface::onEntityLeaveSpace, leaveSpace);
+		NETWORK_ENTITY_MESSAGE_FORWARD_CLIENT_BEGIN(e->id(), (*pSendBundle));
+		ENTITY_MESSAGE_FORWARD_CLIENT_BEGIN(pSendBundle, ClientInterface::onEntityLeaveSpace, leaveSpace);
 		(*pSendBundle) << e->id();
 		ENTITY_MESSAGE_FORWARD_CLIENT_END(pSendBundle, ClientInterface::onEntityLeaveSpace, leaveSpace);
 		e->clientMailbox()->postMail(pSendBundle);
