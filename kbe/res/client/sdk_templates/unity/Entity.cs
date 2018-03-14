@@ -26,8 +26,8 @@
 		
 		public object renderObj = null;
 		
-		//public EntityMailbox baseMailbox = null;
-		//public EntityMailbox cellMailbox = null;
+		//public EntityCall baseEntityCall = null;
+		//public EntityCall cellEntityCall = null;
 		
 		// enterworld之后设置为true
 		public bool inWorld = false;
@@ -58,12 +58,12 @@
 			return id == KBEngineApp.app.entity_id;
 		}
 		
-		public virtual void onRemoteMethodCall(Method method, MemoryStream stream)
+		public virtual void onRemoteMethodCall(MemoryStream stream)
 		{
 			// 动态生成
 		}
 
-		public virtual void onUpdatePropertys(Property prop, MemoryStream stream)
+		public virtual void onUpdatePropertys(MemoryStream stream)
 		{
 			// 动态生成
 		}
@@ -83,13 +83,13 @@
 			// 动态生成
 		}
 
-		public virtual EntityMailbox getBaseMailbox()
+		public virtual EntityCall getBaseEntityCall()
 		{
 			// 动态生成
 			return null;
 		}
 
-		public virtual EntityMailbox getCellMailbox()
+		public virtual EntityCall getCellEntityCall()
 		{
 			// 动态生成
 			return null;
@@ -138,10 +138,11 @@
 				return;
 			}
 			
-			EntityMailbox baseMailbox = getBaseMailbox();
+			EntityCall baseEntityCall = getBaseEntityCall();
 
-			baseMailbox.newMail();
-			baseMailbox.bundle.writeUint16(methodID);
+			baseEntityCall.newCall();
+			baseEntityCall.bundle.writeUint16(0);
+			baseEntityCall.bundle.writeUint16(methodID);
 			
 			try
 			{
@@ -149,7 +150,7 @@
 				{
 					if(method.args[i].isSameType(arguments[i]))
 					{
-						method.args[i].addToStream(baseMailbox.bundle, arguments[i]);
+						method.args[i].addToStream(baseEntityCall.bundle, arguments[i]);
 					}
 					else
 					{
@@ -160,11 +161,11 @@
 			catch(Exception e)
 			{
 				Dbg.ERROR_MSG(className + "::baseCall(method=" + methodname + "): args is error(" + e.Message + ")!");  
-				baseMailbox.bundle = null;
+				baseEntityCall.bundle = null;
 				return;
 			}
 			
-			baseMailbox.postMail(null);
+			baseEntityCall.sendCall(null);
 		}
 		
 		public void cellCall(string methodname, params object[] arguments)
@@ -197,16 +198,17 @@
 				return;
 			}
 			
-			EntityMailbox cellMailbox = getCellMailbox();
+			EntityCall cellEntityCall = getCellEntityCall();
 
-			if(cellMailbox == null)
+			if(cellEntityCall == null)
 			{
 				Dbg.ERROR_MSG(className + "::cellCall(" + methodname + "): no cell!");  
 				return;
 			}
 			
-			cellMailbox.newMail();
-			cellMailbox.bundle.writeUint16(methodID);
+			cellEntityCall.newCall();
+			cellEntityCall.bundle.writeUint16(0);
+			cellEntityCall.bundle.writeUint16(methodID);
 				
 			try
 			{
@@ -214,7 +216,7 @@
 				{
 					if(method.args[i].isSameType(arguments[i]))
 					{
-						method.args[i].addToStream(cellMailbox.bundle, arguments[i]);
+						method.args[i].addToStream(cellEntityCall.bundle, arguments[i]);
 					}
 					else
 					{
@@ -225,11 +227,11 @@
 			catch(Exception e)
 			{
 				Dbg.ERROR_MSG(className + "::cellCall(" + methodname + "): args is error(" + e.Message + ")!");  
-				cellMailbox.bundle = null;
+				cellEntityCall.bundle = null;
 				return;
 			}
 
-			cellMailbox.postMail(null);
+			cellEntityCall.sendCall(null);
 		}
 	
 		public void enterWorld()

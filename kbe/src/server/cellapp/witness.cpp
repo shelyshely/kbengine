@@ -175,7 +175,7 @@ void Witness::onAttach(Entity* pEntity)
 		(*pSendBundle) << pEntity_->isOnGround();
 
 	ENTITY_MESSAGE_FORWARD_CLIENT_END(pSendBundle, ClientInterface::onEntityEnterWorld, entityEnterWorld);
-	pEntity_->clientMailbox()->postMail(pSendBundle);
+	pEntity_->clientEntityCall()->sendCall(pSendBundle);
 }
 
 //-------------------------------------------------------------------------------------
@@ -184,7 +184,7 @@ void Witness::detach(Entity* pEntity)
 	//DEBUG_MSG(fmt::format("Witness::detach: {}({}).\n", 
 	//	pEntity->scriptName(), pEntity->id()));
 
-	EntityMailbox* pClientMB = pEntity_->clientMailbox();
+	EntityCall* pClientMB = pEntity_->clientEntityCall();
 	if(pClientMB)
 	{
 		Network::Channel* pChannel = pClientMB->getChannel();
@@ -199,7 +199,7 @@ void Witness::detach(Entity* pEntity)
 			ENTITY_MESSAGE_FORWARD_CLIENT_BEGIN(pSendBundle, ClientInterface::onEntityLeaveWorld, entityLeaveWorld);
 			(*pSendBundle) << pEntity->id();
 			ENTITY_MESSAGE_FORWARD_CLIENT_END(pSendBundle, ClientInterface::onEntityLeaveWorld, entityLeaveWorld);
-			pClientMB->postMail(pSendBundle);
+			pClientMB->sendCall(pSendBundle);
 		}
 	}
 
@@ -229,7 +229,7 @@ void Witness::clear(Entity* pEntity)
 	clientViewSize_ = 0;
 
 	// 不需要销毁，后面还可以重用
-	// 此处销毁可能会产生错误，因为enterView过程中可能导致实体销毁
+	// 此处销毁可能会产生错误，因为enterview过程中可能导致实体销毁
 	// 在pViewTrigger_流程没走完之前这里销毁了pViewTrigger_就crash
 	//SAFE_RELEASE(pViewTrigger_);
 	//SAFE_RELEASE(pViewHysteresisAreaTrigger_);
@@ -376,7 +376,7 @@ void Witness::onEnterView(ViewTrigger* pViewTrigger, Entity* pEntity)
 	// 先增加一个引用，避免实体在回调中被销毁造成后续判断出错
 	Py_INCREF(pEntity);
 
-	// 在onEnteredView和addWitnessed可能导致自己销毁然后
+	// 在onEnteredview和addWitnessed可能导致自己销毁然后
 	// pEntity_将被设置为NULL，后面没有机会DECREF
 	Entity* pSelfEntity = pEntity_;
 	Py_INCREF(pSelfEntity);
@@ -506,7 +506,7 @@ void Witness::onEnterSpace(Space* pSpace)
 	ENTITY_MESSAGE_FORWARD_CLIENT_END(pSendBundle, ClientInterface::onEntityEnterSpace, entityEnterSpace);
 
 	// 发送消息并清理
-	pEntity_->clientMailbox()->postMail(pSendBundle);
+	pEntity_->clientEntityCall()->sendCall(pSendBundle);
 
 	installViewTrigger();
 }
@@ -522,7 +522,7 @@ void Witness::onLeaveSpace(Space* pSpace)
 	ENTITY_MESSAGE_FORWARD_CLIENT_BEGIN(pSendBundle, ClientInterface::onEntityLeaveSpace, entityLeaveSpace);
 	(*pSendBundle) << pEntity_->id();
 	ENTITY_MESSAGE_FORWARD_CLIENT_END(pSendBundle, ClientInterface::onEntityLeaveSpace, entityLeaveSpace);
-	pEntity_->clientMailbox()->postMail(pSendBundle);
+	pEntity_->clientEntityCall()->sendCall(pSendBundle);
 
 	lastBasePos_.z = -FLT_MAX;
 	lastBaseDir_.yaw(-FLT_MAX);
@@ -603,7 +603,7 @@ Network::Channel* Witness::pChannel()
 	if(pEntity_ == NULL)
 		return NULL;
 
-	EntityMailbox* clientMB = pEntity_->clientMailbox();
+	EntityCall* clientMB = pEntity_->clientEntityCall();
 	if(!clientMB)
 		return NULL;
 
@@ -645,7 +645,7 @@ void Witness::_addViewEntityIDToBundle(Network::Bundle* pBundle, EntityRef* pEnt
 }
 
 //-------------------------------------------------------------------------------------
-const Network::MessageHandler& Witness::getViewEntityMessageHandler(const Network::MessageHandler& normalMsgHandler,
+const Network::MessageHandler& Witness::getViewEntityMessageHandler(const Network::MessageHandler& normalMsgHandler, 
 	const Network::MessageHandler& optimizedMsgHandler, ENTITY_ID entityID, int& ialiasID)
 {
 	ialiasID = -1;
@@ -725,10 +725,10 @@ bool Witness::update()
 {
 	SCOPED_PROFILE(CLIENT_UPDATE_PROFILE);
 
-	if(pEntity_ == NULL || !pEntity_->clientMailbox())
+	if(pEntity_ == NULL || !pEntity_->clientEntityCall())
 		return true;
 
-	Network::Channel* pChannel = pEntity_->clientMailbox()->getChannel();
+	Network::Channel* pChannel = pEntity_->clientEntityCall()->getChannel();
 	if(!pChannel)
 		return true;
 

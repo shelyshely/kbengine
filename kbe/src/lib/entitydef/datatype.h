@@ -46,7 +46,8 @@ namespace KBEngine{
 }
 
 class RefCountable;
-
+class ScriptDefModule;
+class PropertyDescription;
 
 class DataType : public RefCountable
 {
@@ -626,12 +627,12 @@ public:
 	virtual DATATYPE type() const{ return DATA_TYPE_BLOB; }
 };
 
-class MailboxType : public DataType
+class EntityCallType : public DataType
 {
 protected:
 public:	
-	MailboxType(DATATYPE_UID did = 0);
-	virtual ~MailboxType();	
+	EntityCallType(DATATYPE_UID did = 0);
+	virtual ~EntityCallType();	
 
 	bool isSameType(PyObject* pyValue);
 
@@ -641,9 +642,9 @@ public:
 
 	PyObject* parseDefaultStr(std::string defaultVal);
 
-	const char* getName(void) const{ return "MAILBOX";}
+	const char* getName(void) const{ return "ENTITYCALL";}
 
-	virtual DATATYPE type() const{ return DATA_TYPE_MAILBOX; }
+	virtual DATATYPE type() const{ return DATA_TYPE_ENTITYCALL; }
 };
 
 class FixedArrayType : public DataType
@@ -773,6 +774,41 @@ protected:
 	std::string						moduleName_;		
 };
 
+class EntityComponentType : public DataType
+{
+protected:
+public:
+	EntityComponentType(ScriptDefModule* pScriptDefModule, DATATYPE_UID did = 0);
+	virtual ~EntityComponentType();
+
+	bool isSameType(PyObject* pyValue);
+	bool isSamePersistentType(PyObject* pyValue);
+	bool isSameCellDataType(PyObject* pyValue);
+
+	void addToStream(MemoryStream* mstream, PyObject* pyValue);
+	void addPersistentToStream(MemoryStream* mstream, PyObject* pyValue);
+	void addCellDataToStream(MemoryStream* mstream, uint32 flags, PyObject* pyValue, 
+		ENTITY_ID ownerID, PropertyDescription* parentPropertyDescription, COMPONENT_TYPE sendtoComponentType, bool checkValue);
+
+	PyObject* createFromStream(MemoryStream* mstream);
+	PyObject* createFromPersistentStream(MemoryStream* mstream);
+	PyObject* createCellData();
+	PyObject* createCellDataFromPersistentStream(MemoryStream* mstream);
+	PyObject* createCellDataFromStream(MemoryStream* mstream);
+
+	PyObject* parseDefaultStr(std::string defaultVal);
+
+	const char* getName(void) const { return "ENTITY_COMPONENT"; }
+
+	virtual DATATYPE type() const { return DATA_TYPE_ENTITY_COMPONENT; }
+
+	ScriptDefModule* pScriptDefModule() {
+		return pScriptDefModule_;
+	}
+
+protected:
+	ScriptDefModule* pScriptDefModule_;
+};
 
 template class IntType<uint8>;
 template class IntType<uint16>;

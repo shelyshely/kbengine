@@ -10,7 +10,7 @@
 #include "ScriptModule.h"
 #include "Property.h"
 #include "Method.h"
-#include "Mailbox.h"
+#include "EntityCall.h"
 #include "Regex.h"
 #include "KBDebug.h"
 
@@ -846,11 +846,11 @@ void KBEngineApp::Client_onCreatedProxies(uint64 rndUUID, int32 eid, FString& en
 		pEntity->id(eid);
 		pEntity->className(entityType);
 
-		Mailbox* baseMB = new Mailbox();
+		EntityCall* baseMB = new EntityCall();
 		pEntity->base(baseMB);
 		baseMB->id = eid;
 		baseMB->className = entityType;
-		baseMB->type = Mailbox::MAILBOX_TYPE_BASE;
+		baseMB->type = EntityCall::ENTITYCALL_TYPE_BASE;
 
 		entities_.Add(eid, pEntity);
 
@@ -2008,14 +2008,29 @@ void KBEngineApp::Client_onControlEntity(ENTITY_ID eid, int8 isControlled)
 
 void KBEngineApp::Client_onStreamDataStarted(int16 id, uint32 datasize, FString descr)
 {
+	UKBEventData_onStreamDataStarted* pEventData = NewObject<UKBEventData_onStreamDataStarted>();
+	pEventData->resID = id;
+	pEventData->dataSize = datasize;
+	pEventData->dataDescr = descr;
+	KBENGINE_EVENT_FIRE("onStreamDataStarted", pEventData);
 }
 
 void KBEngineApp::Client_onStreamDataRecv(MemoryStream& stream)
 {
+	UKBEventData_onStreamDataRecv* pEventData = NewObject<UKBEventData_onStreamDataRecv>();
+
+	uint16 id = stream.read<uint16>();
+	pEventData->resID = id;
+	stream.readBlob(pEventData->data);
+
+	KBENGINE_EVENT_FIRE("onStreamDataRecv", pEventData);
 }
 
 void KBEngineApp::Client_onStreamDataCompleted(int16 id)
 {
+	UKBEventData_onStreamDataCompleted* pEventData = NewObject<UKBEventData_onStreamDataCompleted>();
+	pEventData->resID = id;
+	KBENGINE_EVENT_FIRE("onStreamDataCompleted", pEventData);
 }
 
 void KBEngineApp::Client_onEntityEnterWorld(MemoryStream& stream)
@@ -2077,11 +2092,11 @@ void KBEngineApp::Client_onEntityEnterWorld(MemoryStream& stream)
 		pEntity->id(eid);
 		pEntity->className(entityType);
 
-		Mailbox* cellMB = new Mailbox();
+		EntityCall* cellMB = new EntityCall();
 		pEntity->cell(cellMB);
 		cellMB->id = eid;
 		cellMB->className = entityType;
-		cellMB->type = Mailbox::MAILBOX_TYPE_CELL;
+		cellMB->type = EntityCall::ENTITYCALL_TYPE_CELL;
 
 		entities_.Add(eid, pEntity);
 
@@ -2114,11 +2129,11 @@ void KBEngineApp::Client_onEntityEnterWorld(MemoryStream& stream)
 			clearEntities(false);
 			entities_.Add(pEntity->id(), pEntity);
 
-			Mailbox* cellMB = new Mailbox();
+			EntityCall* cellMB = new EntityCall();
 			pEntity->cell(cellMB);
 			cellMB->id = eid;
 			cellMB->className = entityType;
-			cellMB->type = Mailbox::MAILBOX_TYPE_CELL;
+			cellMB->type = EntityCall::ENTITYCALL_TYPE_CELL;
 
 			pEntity->set_direction(pEntity->direction);
 			pEntity->set_position(pEntity->position);

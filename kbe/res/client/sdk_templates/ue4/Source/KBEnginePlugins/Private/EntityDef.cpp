@@ -22,8 +22,16 @@ void EntityDef::initialize()
 
 void EntityDef::clear()
 {
+	TArray<KBEDATATYPE_BASE*> deleted_datatypes;
 	for (auto& item : EntityDef::datatypes)
+	{
+		int32 idx = deleted_datatypes.Find(item.Value);
+		if (idx != INDEX_NONE)
+			continue;
+
+		deleted_datatypes.Add(item.Value);
 		delete item.Value;
+	}
 
 	for (auto& item : EntityDef::moduledefs)
 		delete item.Value;
@@ -66,7 +74,7 @@ void EntityDef::initDataType()
 	datatypes.Add(TEXT("PY_TUPLE"), new KBEDATATYPE_PYTHON());
 	datatypes.Add(TEXT("PY_LIST"), new KBEDATATYPE_PYTHON());
 	datatypes.Add(TEXT("UNICODE"), new KBEDATATYPE_UNICODE());
-	datatypes.Add(TEXT("MAILBOX"), new KBEDATATYPE_MAILBOX());
+	datatypes.Add(TEXT("ENTITYCALL"), new KBEDATATYPE_ENTITYCALL());
 	datatypes.Add(TEXT("BLOB"), new KBEDATATYPE_BLOB());
 }
 
@@ -85,7 +93,7 @@ void EntityDef::bindMessageDataType()
 	datatype2id.Add(TEXT("DATATYPE"), 2);
 	datatype2id.Add(TEXT("CHAR"), 2);
 	datatype2id.Add(TEXT("DETAIL_TYPE"), 2);
-	datatype2id.Add(TEXT("MAIL_TYPE"), 2);
+	datatype2id.Add(TEXT("ENTITYCALL_CALL_TYPE"), 2);
 
 	id2datatypes.Add(2, datatypes["UINT8"]);
 
@@ -142,7 +150,7 @@ void EntityDef::bindMessageDataType()
 	datatype2id.Add(TEXT("PY_DICT"), 10);
 	datatype2id.Add(TEXT("PY_TUPLE"), 10);
 	datatype2id.Add(TEXT("PY_LIST"), 10);
-	datatype2id.Add(TEXT("MAILBOX"), 10);
+	datatype2id.Add(TEXT("ENTITYCALL"), 10);
 
 	id2datatypes.Add(10, datatypes["PYTHON"]);
 
