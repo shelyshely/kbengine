@@ -1,22 +1,4 @@
-/*
-This source file is part of KBEngine
-For the latest info, see http://www.kbengine.org/
-
-Copyright (c) 2008-2018 KBEngine.
-
-KBEngine is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-KBEngine is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
- 
-You should have received a copy of the GNU Lesser General Public License
-along with KBEngine.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Copyright 2008-2018 Yolo Technologies, Inc. All Rights Reserved. https://www.comblockengine.com
 
 #ifndef _PY_MACROS_H
 #define _PY_MACROS_H
@@ -680,17 +662,27 @@ namespace KBEngine{ namespace script{
 	}																									\
 	else																								\
 	{																									\
-		PyObject* pyResult = PyObject_CallMethod((OBJ), (METHOT_NAME), 									\
-															const_cast<char*>(""));						\
-		if(pyResult != NULL) {																			\
-			Py_DECREF(pyResult);																		\
+		if (PyObject_HasAttrString(OBJ, METHOT_NAME))													\
+		{																								\
+			PyObject* pyResult = PyObject_CallMethod((OBJ), (METHOT_NAME), 								\
+																const_cast<char*>(""));					\
+			if(pyResult != NULL) {																		\
+				Py_DECREF(pyResult);																	\
+			}																							\
+			else																						\
+			{																							\
+				PyErr_PrintEx(0);																		\
+			}																							\
 		}																								\
 		else																							\
 		{																								\
 			if (GETERROR)																				\
+			{																							\
+				PyErr_Format(PyExc_AttributeError, "'%s' object has no attribute '%s'", 				\
+					OBJ->ob_type->tp_name, METHOT_NAME);												\
+																										\
 				PyErr_PrintEx(0);																		\
-			else																						\
-				PyErr_Clear();																			\
+			}																							\
 		}																								\
 	}																									\
 }																										\
@@ -704,21 +696,30 @@ namespace KBEngine{ namespace script{
 	}																									\
 	else																								\
 	{																									\
-		PyObject* pyResult = PyObject_CallMethod((OBJ), 												\
+		if (PyObject_HasAttrString(OBJ, METHOT_NAME))													\
+		{																								\
+			PyObject* pyResult = PyObject_CallMethod((OBJ), 											\
 												(METHOT_NAME), 											\
 												(FORMAT),												\
 												(ARG1)													\
 													);													\
-																										\
-		if(pyResult != NULL) {																			\
-			Py_DECREF(pyResult);																		\
+			if(pyResult != NULL) {																		\
+				Py_DECREF(pyResult);																	\
+			}																							\
+			else																						\
+			{																							\
+				PyErr_PrintEx(0);																		\
+			}																							\
 		}																								\
 		else																							\
 		{																								\
 			if (GETERROR)																				\
+			{																							\
+				PyErr_Format(PyExc_AttributeError, "'%s' object has no attribute '%s'", 				\
+					OBJ->ob_type->tp_name, METHOT_NAME);												\
+																										\
 				PyErr_PrintEx(0);																		\
-			else																						\
-				PyErr_Clear();																			\
+			}																							\
 		}																								\
 	}																									\
 }																										\
@@ -732,22 +733,31 @@ namespace KBEngine{ namespace script{
 	}																									\
 	else																								\
 	{																									\
-		PyObject* pyResult = PyObject_CallMethod((OBJ), 												\
+		if (PyObject_HasAttrString(OBJ, METHOT_NAME))													\
+		{																								\
+			PyObject* pyResult = PyObject_CallMethod((OBJ), 											\
 												(METHOT_NAME), 											\
 												(FORMAT),												\
 												(ARG1),													\
 												(ARG2)													\
 													);													\
-																										\
-		if(pyResult != NULL) {																			\
-			Py_DECREF(pyResult);																		\
+			if(pyResult != NULL) {																		\
+				Py_DECREF(pyResult);																	\
+			}																							\
+			else																						\
+			{																							\
+				PyErr_PrintEx(0);																		\
+			}																							\
 		}																								\
 		else																							\
 		{																								\
 			if (GETERROR)																				\
+			{																							\
+				PyErr_Format(PyExc_AttributeError, "'%s' object has no attribute '%s'", 				\
+					OBJ->ob_type->tp_name, METHOT_NAME);												\
+																										\
 				PyErr_PrintEx(0);																		\
-			else																						\
-				PyErr_Clear();																			\
+			}																							\
 		}																								\
 	}																									\
 }																										\
@@ -761,23 +771,32 @@ namespace KBEngine{ namespace script{
 	}																									\
 	else																								\
 	{																									\
-		PyObject* pyResult = PyObject_CallMethod((OBJ), 												\
+		if (PyObject_HasAttrString(OBJ, METHOT_NAME))													\
+		{																								\
+			PyObject* pyResult = PyObject_CallMethod((OBJ), 											\
 												(METHOT_NAME), 											\
 												(FORMAT),												\
 												(ARG1),													\
 												(ARG2),													\
 												(ARG3)													\
 													);													\
-																										\
-		if(pyResult != NULL) {																			\
-			Py_DECREF(pyResult);																		\
+			if(pyResult != NULL) {																		\
+				Py_DECREF(pyResult);																	\
+			}																							\
+			else																						\
+			{																							\
+				PyErr_PrintEx(0);																		\
+			}																							\
 		}																								\
 		else																							\
 		{																								\
 			if (GETERROR)																				\
+			{																							\
+				PyErr_Format(PyExc_AttributeError, "'%s' object has no attribute '%s'", 				\
+					OBJ->ob_type->tp_name, METHOT_NAME);												\
+																										\
 				PyErr_PrintEx(0);																		\
-			else																						\
-				PyErr_Clear();																			\
+			}																							\
 		}																								\
 	}																									\
 }																										\
@@ -791,7 +810,9 @@ namespace KBEngine{ namespace script{
 	}																									\
 	else																								\
 	{																									\
-		PyObject* pyResult = PyObject_CallMethod((OBJ), 												\
+		if (PyObject_HasAttrString(OBJ, METHOT_NAME))													\
+		{																								\
+			PyObject* pyResult = PyObject_CallMethod((OBJ), 											\
 												(METHOT_NAME), 											\
 												(FORMAT),												\
 												(ARG1),													\
@@ -799,17 +820,25 @@ namespace KBEngine{ namespace script{
 												(ARG3),													\
 												(ARG4)													\
 													);													\
-																										\
-		if(pyResult != NULL) {																			\
-			Py_DECREF(pyResult);																		\
+			if(pyResult != NULL) {																		\
+				Py_DECREF(pyResult);																	\
+			}																							\
+			else																						\
+			{																							\
+				PyErr_PrintEx(0);																		\
+			}																							\
 		}																								\
 		else																							\
 		{																								\
 			if (GETERROR)																				\
+			{																							\
+				PyErr_Format(PyExc_AttributeError, "'%s' object has no attribute '%s'", 				\
+					OBJ->ob_type->tp_name, METHOT_NAME);												\
+																										\
 				PyErr_PrintEx(0);																		\
-			else																						\
-				PyErr_Clear();																			\
+			}																							\
 		}																								\
+	}																									\
 }																										\
 
 
@@ -821,7 +850,9 @@ namespace KBEngine{ namespace script{
 	}																									\
 	else																								\
 	{																									\
-		PyObject* pyResult = PyObject_CallMethod((OBJ), 												\
+		if (PyObject_HasAttrString(OBJ, METHOT_NAME))													\
+		{																								\
+			PyObject* pyResult = PyObject_CallMethod((OBJ), 											\
 												(METHOT_NAME), 											\
 												(FORMAT),												\
 												(ARG1),													\
@@ -830,16 +861,23 @@ namespace KBEngine{ namespace script{
 												(ARG4),													\
 												(ARG5)													\
 													);													\
-																										\
-		if(pyResult != NULL) {																			\
-			Py_DECREF(pyResult);																		\
+			if(pyResult != NULL) {																		\
+				Py_DECREF(pyResult);																	\
+			}																							\
+			else																						\
+			{																							\
+				PyErr_PrintEx(0);																		\
+			}																							\
 		}																								\
 		else																							\
 		{																								\
 			if (GETERROR)																				\
+			{																							\
+				PyErr_Format(PyExc_AttributeError, "'%s' object has no attribute '%s'", 				\
+					OBJ->ob_type->tp_name, METHOT_NAME);												\
+																										\
 				PyErr_PrintEx(0);																		\
-			else																						\
-				PyErr_Clear();																			\
+			}																							\
 		}																								\
 	}																									\
 }																										\

@@ -1,26 +1,9 @@
-/*
-This source file is part of KBEngine
-For the latest info, see http://www.kbengine.org/
-
-Copyright (c) 2008-2018 KBEngine.
-
-KBEngine is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-KBEngine is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
- 
-You should have received a copy of the GNU Lesser General Public License
-along with KBEngine.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Copyright 2008-2018 Yolo Technologies, Inc. All Rights Reserved. https://www.comblockengine.com
 
 
 #include "baseapp.h"
 #include "proxy.h"
+#include "space.h"
 #include "entity.h"
 #include "baseapp_interface.h"
 #include "entity_remotemethod.h"
@@ -84,15 +67,58 @@ PyObject* createDictDataFromPersistentStream(MemoryStream& s, const char* entity
 			PyObject* pyVal = NULL;
 			const char* attrname = propertyDescription->getName();
 
-			if (propertyDescription->getDataType()->type() == DATA_TYPE_ENTITY_COMPONENT && !propertyDescription->hasBase())
+			if (propertyDescription->getDataType()->type() == DATA_TYPE_ENTITY_COMPONENT)
 			{
-				pyVal = ((EntityComponentType*)propertyDescription->getDataType())->createCellDataFromPersistentStream(&s);
+				bool hasComponentData = false;
+				EntityComponentType* pEntityComponentType = ((EntityComponentType*)propertyDescription->getDataType());
+
+				s >> hasComponentData;
+
+				if (hasComponentData)
+				{
+					if (!propertyDescription->hasBase())
+					{
+						pyVal = pEntityComponentType->createCellDataFromPersistentStream(&s);
+					}
+					else
+					{
+						pyVal = propertyDescription->createFromPersistentStream(&s);
+
+						if (!propertyDescription->isSameType(pyVal))
+						{
+							if (pyVal)
+							{
+								Py_DECREF(pyVal);
+							}
+
+							ERROR_MSG(fmt::format("Baseapp::createDictDataFromPersistentStream: {}.{} error, set to default!\n",
+								entityType, attrname));
+
+							pyVal = propertyDescription->parseDefaultStr("");
+						}
+					}
+				}
+				else
+				{
+					if (!propertyDescription->hasBase())
+					{
+						pyVal = ((EntityComponentType*)propertyDescription->getDataType())->createCellDataFromPersistentStream(NULL);
+					}
+					else
+					{
+
+						ERROR_MSG(fmt::format("Baseapp::createDictDataFromPersistentStream: {}.{} error, set to default!\n",
+							entityType, attrname));
+
+						pyVal = propertyDescription->parseDefaultStr("");
+					}
+				}
 			}
 			else
 			{
 				pyVal = propertyDescription->createFromPersistentStream(&s);
 
-				if (!propertyDescription->getDataType()->isSameType(pyVal))
+				if (!propertyDescription->isSameType(pyVal))
 				{
 					if (pyVal)
 					{
@@ -102,7 +128,7 @@ PyObject* createDictDataFromPersistentStream(MemoryStream& s, const char* entity
 					ERROR_MSG(fmt::format("Baseapp::createDictDataFromPersistentStream: {}.{} error, set to default!\n",
 						entityType, attrname));
 
-					pyVal = propertyDescription->getDataType()->parseDefaultStr("");
+					pyVal = propertyDescription->parseDefaultStr("");
 				}
 			}
 
@@ -153,7 +179,7 @@ PyObject* createDictDataFromPersistentStream(MemoryStream& s, const char* entity
 			ERROR_MSG(fmt::format("Baseapp::createDictDataFromPersistentStream: set({}.{}) to default!\n",
 				entityType, attrname));
 
-			PyObject* pyVal = propertyDescription->getDataType()->parseDefaultStr("");
+			PyObject* pyVal = propertyDescription->parseDefaultStr("");
 
 			PyDict_SetItemString(pyDict, attrname, pyVal);
 			Py_DECREF(pyVal);
@@ -371,6 +397,7 @@ bool Baseapp::installPyModules()
 {
 	Entity::installScript(getScript().getModule());
 	Proxy::installScript(getScript().getModule());
+	Space::installScript(getScript().getModule());
 	EntityComponent::installScript(getScript().getModule());
 	GlobalDataClient::installScript(getScript().getModule());
 
@@ -869,6 +896,10 @@ Entity* Baseapp::onCreateEntity(PyObject* pyEntity, ScriptDefModule* sm, ENTITY_
 	if(PyType_IsSubtype(sm->getScriptType(), Proxy::getScriptType()))
 	{
 		return new(pyEntity) Proxy(eid, sm);
+	}
+	else if (PyType_IsSubtype(sm->getScriptType(), Space::getScriptType()))
+	{
+		return new(pyEntity) Space(eid, sm);
 	}
 
 	return EntityApp<Entity>::onCreateEntity(pyEntity, sm, eid);

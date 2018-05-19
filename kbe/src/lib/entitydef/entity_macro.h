@@ -1,22 +1,4 @@
-/*
-This source file is part of KBEngine
-For the latest info, see http://www.kbengine.org/
-
-Copyright (c) 2008-2018 KBEngine.
-
-KBEngine is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-KBEngine is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
- 
-You should have received a copy of the GNU Lesser General Public License
-along with KBEngine.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Copyright 2008-2018 Yolo Technologies, Inc. All Rights Reserved. https://www.comblockengine.com
 
 
 #ifndef KBE_ENTITY_MACRO_H
@@ -310,6 +292,7 @@ public:																										\
 																											\
 	bool initing() const{ return hasFlags(ENTITY_FLAGS_INITING); }											\
 																											\
+	void onInitializeScript();																				\
 	void initializeScript()																					\
 	{																										\
 		removeFlags(ENTITY_FLAGS_INITING);																	\
@@ -379,6 +362,8 @@ public:																										\
 				PyErr_Clear();																				\
 			}																								\
 		}																									\
+																											\
+		onInitializeScript();																				\
 	}																										\
 																											\
 	void initializeEntity(PyObject* dictData)																\
@@ -432,7 +417,7 @@ public:																										\
 		if(cellDataDict == NULL)																			\
 		{																									\
 			PyErr_Clear();																					\
-			EntityComponent::convertDictDataToEntityComponent(id(), pScriptModule_, dictData);				\
+			EntityComponent::convertDictDataToEntityComponent(id(), this, pScriptModule_, dictData);		\
 		}																									\
 																											\
 		while(PyDict_Next(dictData, &pos, &key, &value))													\
@@ -511,15 +496,32 @@ public:																										\
 		ScriptDefModule::PROPERTYDESCRIPTION_UIDMAP& propertyDescrs =										\
 								pScriptModule_->getCellPropertyDescriptions_uidmap();						\
 																											\
-		size_t count = 0;																					\
+		size_t count = propertyDescrs.size();																\
 																											\
-		while(mstream->length() > 0 && count < propertyDescrs.size())										\
+		{																									\
+			ScriptDefModule::PROPERTYDESCRIPTION_UIDMAP::iterator iter = propertyDescrs.begin();			\
+			for(; iter != propertyDescrs.end(); ++iter)														\
+			{																								\
+				/* 由于存在一种情况， 组件def中没有内容， 但有cell脚本，此时baseapp上无法判断他是否有cell属性，所以写celldata时没有数据写入 */ \
+				if (iter->second->getDataType()->type() == DATA_TYPE_ENTITY_COMPONENT)						\
+				{																							\
+					EntityComponentType* pEntityComponentType = (EntityComponentType*)iter->second->getDataType();	\
+					if (pEntityComponentType->pScriptDefModule()->getPropertyDescrs().size() == 0)			\
+					{																						\
+						--count;																			\
+						continue;																			\
+					}																						\
+				}																							\
+			}																								\
+		}																									\
+																											\
+		while(mstream->length() > 0 && count-- > 0)															\
 		{																									\
 			(*mstream) >> uid /* 父属性 */ >> uid;															\
 			ScriptDefModule::PROPERTYDESCRIPTION_UIDMAP::iterator iter = propertyDescrs.find(uid);			\
 			if(iter == propertyDescrs.end())																\
 			{																								\
-				ERROR_MSG(fmt::format(#CLASS"::createCellDataFromStream: not found uid({})\n", uid));		\
+				ERROR_MSG(fmt::format("{}::createCellDataFromStream: not found uid({})! entityID={}\n", scriptName(), uid, id()));	\
 				break;																						\
 			}																								\
 																											\
@@ -545,8 +547,6 @@ public:																										\
 				PyDict_SetItemString(cellData, iter->second->getName(), pyobj);								\
 				Py_DECREF(pyobj);																			\
 			}																								\
-																											\
-			++count;																						\
 		}																									\
 																											\
 		return cellData;																					\
@@ -1047,8 +1047,8 @@ public:																										\
 																											\
 		if (!PyCallable_Check(pyCallback))																	\
 		{																									\
-			PyErr_Format(PyExc_TypeError, #CLASS"::registerEvent: '%.200s' object is not callable! eventName=%s",\
-				(pyCallback ? pyCallback->ob_type->tp_name : "NULL"), evnName.c_str());						\
+			PyErr_Format(PyExc_TypeError, "{}::registerEvent: '%.200s' object is not callable! eventName=%s, entityID={}",\
+				scriptName(), (pyCallback ? pyCallback->ob_type->tp_name : "NULL"), evnName.c_str(), id());		\
 			PyErr_PrintEx(0);																				\
 			return false;																					\
 		}																									\
@@ -1059,8 +1059,8 @@ public:																										\
 		{																									\
 			if((*iter).get() == pyCallback)																	\
 			{																								\
-				PyErr_Format(PyExc_TypeError, #CLASS"::registerEvent: This callable('%.200s') has been registered! eventName=%s",\
-					(pyCallback ? pyCallback->ob_type->tp_name : "NULL"), evnName.c_str());					\
+				PyErr_Format(PyExc_TypeError, "{}::registerEvent: This callable('%.200s') has been registered! eventName=%s, entityID={}",\
+					scriptName(), (pyCallback ? pyCallback->ob_type->tp_name : "NULL"), evnName.c_str(), id());	\
 				PyErr_PrintEx(0);																			\
 				return false;																				\
 			}																								\
@@ -1130,11 +1130,19 @@ public:																										\
 			Py_RETURN_FALSE;																				\
 		}																									\
 																											\
-		const char* eventName;																				\
+		const char* eventName = NULL;																		\
 		PyObject* pycallback = NULL;																		\
 		if(PyArg_ParseTuple(args, "sO", &eventName, &pycallback) == -1)										\
 		{																									\
 			PyErr_Format(PyExc_AssertionError, "%s::registerEvent:: args error!", pobj->scriptName());		\
+			PyErr_PrintEx(0);																				\
+			pycallback = NULL;																				\
+			Py_RETURN_FALSE;																				\
+		}																									\
+																											\
+		if(!eventName)																						\
+		{																									\
+			PyErr_Format(PyExc_AssertionError, "%s::registerEvent:: eventName error!", pobj->scriptName());	\
 			PyErr_PrintEx(0);																				\
 			pycallback = NULL;																				\
 			Py_RETURN_FALSE;																				\
@@ -1158,11 +1166,19 @@ public:																										\
 			Py_RETURN_FALSE;																				\
 		}																									\
 																											\
-		const char* eventName;																				\
+		const char* eventName = NULL;																		\
 		PyObject* pycallback = NULL;																		\
 		if(PyArg_ParseTuple(args, "sO", &eventName, &pycallback) == -1)										\
 		{																									\
 			PyErr_Format(PyExc_AssertionError, "%s::deregisterEvent:: args error!", pobj->scriptName());	\
+			PyErr_PrintEx(0);																				\
+			pycallback = NULL;																				\
+			Py_RETURN_FALSE;																				\
+		}																									\
+																											\
+		if(!eventName)																						\
+		{																									\
+			PyErr_Format(PyExc_AssertionError, "%s::deregisterEvent:: eventName error!", pobj->scriptName());\
 			PyErr_PrintEx(0);																				\
 			pycallback = NULL;																				\
 			Py_RETURN_FALSE;																				\
@@ -1186,12 +1202,19 @@ public:																										\
 			Py_RETURN_FALSE;																				\
 		}																									\
 																											\
-		char* eventName;																					\
+		char* eventName = NULL;																				\
 		if(currargsSize == 1)																				\
 		{																									\
 			if(PyArg_ParseTuple(args, "s", &eventName) == -1)												\
 			{																								\
-				PyErr_Format(PyExc_AssertionError, "%s::fireEvent:: args error!", pobj->scriptName());		\
+				PyErr_Format(PyExc_AssertionError, "%s::fireEvent:: args error! entityID={}", pobj->scriptName(), pobj->id());		\
+				PyErr_PrintEx(0);																			\
+				Py_RETURN_FALSE;																			\
+			}																								\
+																											\
+			if(!eventName)																					\
+			{																								\
+				PyErr_Format(PyExc_AssertionError, "%s::fireEvent:: eventName error!", pobj->scriptName());	\
 				PyErr_PrintEx(0);																			\
 				Py_RETURN_FALSE;																			\
 			}																								\
@@ -1203,7 +1226,14 @@ public:																										\
 			PyObject* pyobj = NULL;																			\
 			if (PyArg_ParseTuple(args, "sO", &eventName, &pyobj) == -1)										\
 			{																								\
-				PyErr_Format(PyExc_AssertionError, "%s::fireEvent:: args error!", pobj->scriptName());		\
+				PyErr_Format(PyExc_AssertionError, "%s::fireEvent:: args error! entityID={}", pobj->scriptName(), pobj->id());		\
+				PyErr_PrintEx(0);																			\
+				Py_RETURN_FALSE;																			\
+			}																								\
+																											\
+			if(!eventName)																					\
+			{																								\
+				PyErr_Format(PyExc_AssertionError, "%s::fireEvent:: eventName error!", pobj->scriptName());	\
 				PyErr_PrintEx(0);																			\
 				Py_RETURN_FALSE;																			\
 			}																								\
@@ -1217,6 +1247,14 @@ public:																										\
 		else																								\
 		{																									\
 			PyObject* pyEvnName = PyTuple_GET_ITEM(args, 0);												\
+																											\
+			if(!PyUnicode_Check(pyEvnName))																	\
+			{																								\
+				PyErr_Format(PyExc_AssertionError, "%s::fireEvent:: eventName error!", pobj->scriptName());	\
+				PyErr_PrintEx(0);																			\
+				Py_RETURN_FALSE;																			\
+			}																								\
+																											\
 			wchar_t* PyUnicode_AsWideCharStringRet0 = PyUnicode_AsWideCharString(pyEvnName, NULL);			\
 			eventName = strutil::wchar2char(PyUnicode_AsWideCharStringRet0);								\
 			PyMem_Free(PyUnicode_AsWideCharStringRet0);														\
@@ -1272,12 +1310,19 @@ public:																										\
 			Py_RETURN_NONE;																					\
 		}																									\
 																											\
-		char* componentName;																				\
+		char* componentName = NULL;																			\
 		if(currargsSize == 1)																				\
 		{																									\
 			if(PyArg_ParseTuple(args, "s", &componentName) == -1)											\
 			{																								\
 				PyErr_Format(PyExc_AssertionError, "%s::getComponent:: args error!", pobj->scriptName());	\
+				PyErr_PrintEx(0);																			\
+				Py_RETURN_NONE;																				\
+			}																								\
+																											\
+			if(!componentName)																				\
+			{																								\
+				PyErr_Format(PyExc_AssertionError, "%s::getComponent:: componentName error!", pobj->scriptName());\
 				PyErr_PrintEx(0);																			\
 				Py_RETURN_NONE;																				\
 			}																								\
@@ -1291,7 +1336,14 @@ public:																										\
 			{																								\
 				PyErr_Format(PyExc_AssertionError, "%s::getComponent:: args error!", pobj->scriptName());	\
 				PyErr_PrintEx(0);																			\
-				Py_RETURN_FALSE;																			\
+				Py_RETURN_NONE;																				\
+			}																								\
+																											\
+			if(!componentName)																				\
+			{																								\
+				PyErr_Format(PyExc_AssertionError, "%s::getComponent:: componentName error!", pobj->scriptName());\
+				PyErr_PrintEx(0);																			\
+				Py_RETURN_NONE;																				\
 			}																								\
 																											\
 			return pobj->pyGetComponent(componentName, (pyobj == Py_True));									\
@@ -1497,8 +1549,8 @@ public:																										\
 			}																								\
 			else																							\
 			{																								\
-				ERROR_MSG(fmt::format(#CLASS"::initProperty: {} dataType is NULL.\n",						\
-					propertyDescription->getName()));														\
+				ERROR_MSG(fmt::format("{}::initProperty: {} dataType is NULL！ entityID={}\n",				\
+					scriptName(), propertyDescription->getName(), id()));									\
 			}																								\
 		}																									\
 																											\

@@ -1,22 +1,4 @@
-/*
-This source file is part of KBEngine
-For the latest info, see http://www.kbengine.org/
-
-Copyright (c) 2008-2018 KBEngine.
-
-KBEngine is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-KBEngine is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
- 
-You should have received a copy of the GNU Lesser General Public License
-along with KBEngine.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Copyright 2008-2018 Yolo Technologies, Inc. All Rights Reserved. https://www.comblockengine.com
 
 #include "dbtasks.h"
 #include "dbmgr.h"
@@ -737,7 +719,7 @@ bool DBTaskCreateAccount::writeAccount(DBInterface* pdbi, const std::string& acc
 //-------------------------------------------------------------------------------------
 thread::TPTask::TPTaskState DBTaskCreateAccount::presentMainThread()
 {
-	DEBUG_MSG(fmt::format("Dbmgr::reqCreateAccount: {}.\n", registerName_.c_str()));
+	DEBUG_MSG(fmt::format("Dbmgr::reqCreateAccount: {}, success={}.\n", registerName_.c_str(), success_));
 
 	Network::Bundle* pBundle = Network::Bundle::createPoolObject();
 	(*pBundle).newMessage(LoginappInterface::onReqCreateAccountResult);
@@ -820,7 +802,7 @@ bool DBTaskCreateMailAccount::db_thread_process()
 
 	// 生成激活码并存储激活码到数据库
 	// 发送smtp邮件到邮箱， 用户点击确认后即可激活
-	getdatas_ = genmail_code(password_);
+	std::string codestr = genmail_code(password_);
 	KBEEmailVerificationTable* pTable1 = static_cast<KBEEmailVerificationTable*>(entityTables.findKBETable(KBE_TABLE_PERFIX "_email_verification"));
 	KBE_ASSERT(pTable1);
 	
@@ -842,6 +824,7 @@ bool DBTaskCreateMailAccount::db_thread_process()
 	}
 
 	password_ = KBE_MD5::getDigest(password_.data(), (int)password_.length());
+	getdatas_ = codestr;
 
 	success_ = pTable1->logAccount(pdbi_, (int8)KBEEmailVerificationTable::V_TYPE_CREATEACCOUNT, 
 		registerName_, password_, getdatas_);

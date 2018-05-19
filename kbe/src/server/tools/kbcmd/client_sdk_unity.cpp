@@ -1,22 +1,4 @@
-/*
-This source file is part of KBEngine
-For the latest info, see http://www.kbengine.org/
-
-Copyright (c) 2008-2018 KBEngine.
-
-KBEngine is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-KBEngine is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
- 
-You should have received a copy of the GNU Lesser General Public License
-along with KBEngine.  If not, see <http://www.gnu.org/licenses/>.
-*/
+// Copyright 2008-2018 Yolo Technologies, Inc. All Rights Reserved. https://www.comblockengine.com
 
 #include "kbcmd.h"
 #include "client_sdk.h"
@@ -599,7 +581,7 @@ bool ClientSDKUnity::writeEntityCallEnd(ScriptDefModule* pScriptDefModule)
 }
 
 //-------------------------------------------------------------------------------------
-bool ClientSDKUnity::writeEntityCallMethod(ScriptDefModule* pScriptDefModule, MethodDescription* pMethodDescription, const char* fillString1, const char* fillString2, COMPONENT_TYPE componentType)
+bool ClientSDKUnity::writeEntityCallMethodBegin(ScriptDefModule* pScriptDefModule, MethodDescription* pMethodDescription, const char* fillString1, const char* fillString2, COMPONENT_TYPE componentType)
 {
 	sourcefileBody_ += fmt::format("\t\tpublic void {}({})\n\t\t{{\n", pMethodDescription->getName(), fillString1);
 
@@ -651,6 +633,13 @@ bool ClientSDKUnity::writeEntityCallMethod(ScriptDefModule* pScriptDefModule, Me
 	}
 
 	sourcefileBody_ += fmt::format("\t\t\tsendCall(null);\n");
+	return true;
+}
+
+//-------------------------------------------------------------------------------------
+bool ClientSDKUnity::writeEntityCallMethodEnd(ScriptDefModule* pScriptDefModule, MethodDescription* pMethodDescription)
+{
+	sourcefileBody_ += fmt::format("\t\t}}\n\n");
 	return true;
 }
 
@@ -846,7 +835,7 @@ bool ClientSDKUnity::createArrayChildClass(DataType* pRootDataType, DataType* pD
 		std::string writeName;
 		if (isFixedType)
 		{
-			writeName = fmt::format("itemType.addToStream(stream, v[i])");
+			writeName = fmt::format("itemType.addToStreamEx(stream, v[i])");
 		}
 		else
 		{
@@ -917,7 +906,7 @@ bool ClientSDKUnity::createArrayChildClass(DataType* pRootDataType, DataType* pD
 		std::string writeName;
 		if (isFixedType)
 		{
-			writeName = fmt::format("itemType.addToStream(stream, v[i])", writeName);
+			writeName = fmt::format("itemType.addToStreamEx(stream, v[i])", writeName);
 		}
 		else
 		{
@@ -991,6 +980,7 @@ bool ClientSDKUnity::writeCustomDataType(const DataType* pDataType)
 	if (strcmp(pDataType->getName(), "FIXED_DICT") == 0)
 	{
 		sourcefileBody_ += fmt::format("\n\n\tpublic class DATATYPE_{} : DATATYPE_BASE\n\t{{\n", typeName);
+		std::map<std::string, std::string> allClassName;
 
 		FixedDictType* dictdatatype = const_cast<FixedDictType*>(static_cast<const FixedDictType*>(pDataType));
 
@@ -1012,10 +1002,24 @@ bool ClientSDKUnity::writeCustomDataType(const DataType* pDataType)
 
 					std::string className = pKeyDataType->aliasName();
 
-					sourcefileBody_ += fmt::format("\t\tprivate DATATYPE_{} {}_DataType = new DATATYPE_{}();\n\n",
-						className + "_ChildArray", keyiter->first, className + "_ChildArray");
+					if (strlen(pFixedArrayType->aliasName()) == 0 || pFixedArrayType->aliasName()[0] == '_')
+					{
+						sourcefileBody_ += fmt::format("\t\tprivate DATATYPE_{} {}_DataType = new DATATYPE_{}();\n\n",
+							className + "_ChildArray", keyiter->first, className + "_ChildArray");
 
-					createArrayChildClass(pFixedArrayType, pFixedArrayType->getDataType(), className + "_ChildArray", "\t\t");
+						std::map<std::string, std::string>::iterator findChildClassNameIter = allClassName.find(className + "_ChildArray");
+
+						if (findChildClassNameIter == allClassName.end())
+						{
+							allClassName[className + "_ChildArray"] = typeName;
+							createArrayChildClass(pFixedArrayType, pFixedArrayType->getDataType(), className + "_ChildArray", "\t\t");
+						}
+					}
+					else
+					{
+						sourcefileBody_ += fmt::format("\t\tprivate DATATYPE_{} {}_DataType = new DATATYPE_{}();\n\n",
+							className, keyiter->first, className);
+					}
 				}
 				else
 				{
@@ -1145,7 +1149,7 @@ bool ClientSDKUnity::writeCustomDataType(const DataType* pDataType)
 			std::string writeName;
 			if (isFixedType)
 			{
-				writeName = fmt::format("itemType.addToStream(stream, v[i])", writeName);
+				writeName = fmt::format("itemType.addToStreamEx(stream, v[i])", writeName);
 			}
 			else
 			{
@@ -1175,7 +1179,7 @@ bool ClientSDKUnity::writeCustomDataType(const DataType* pDataType)
 			sourcefileBody_ += fmt::format("\t\t}}\n\n");
 
 			sourcefileBody_ += fmt::format("\t\tpublic void addToStreamEx(Bundle stream, {} v)\n\t\t{{\n", typeName);
-			std::string writeName = fmt::format("itemType.addToStream(stream, v)", writeName);
+			std::string writeName = fmt::format("itemType.addToStreamEx(stream, v)", writeName);
 			sourcefileBody_ += fmt::format("\t\t\t{};\n", writeName);
 			sourcefileBody_ += fmt::format("\t\t}}\n");
 
@@ -1207,7 +1211,7 @@ bool ClientSDKUnity::writeCustomDataType(const DataType* pDataType)
 			std::string writeName;
 			if (isFixedType)
 			{
-				writeName = fmt::format("itemType.addToStream(stream, v[i])", writeName);
+				writeName = fmt::format("itemType.addToStreamEx(stream, v[i])", writeName);
 			}
 			else
 			{
@@ -1699,7 +1703,7 @@ bool ClientSDKUnity::writeTypeItemType_VECTOR3(const std::string& itemName, cons
 #ifdef CLIENT_NO_FLOAT
 	sourcefileBody_ += fmt::format("\t\tpublic Vector3Int {} = new Vector3Int(0, 0, 0);\n", itemName);
 #else
-	sourcefileBody_ += fmt::format("\t\tpublic Vector3 {} = new Vector2(0f, 0f, 0f);\n", itemName);
+	sourcefileBody_ += fmt::format("\t\tpublic Vector3 {} = new Vector3(0f, 0f, 0f);\n", itemName);
 #endif
 
 	return true;
@@ -2415,7 +2419,7 @@ bool ClientSDKUnity::writeEntityProperty_UINT64(ScriptDefModule* pEntityScriptDe
 bool ClientSDKUnity::writeEntityProperty_FLOAT(ScriptDefModule* pEntityScriptDefModule,
 	ScriptDefModule* pCurrScriptDefModule, PropertyDescription* pPropertyDescription)
 {
-	sourcefileBody_ += fmt::format("\t\tpublic float {} = {};\n", pPropertyDescription->getName(),
+	sourcefileBody_ += fmt::format("\t\tpublic float {} = {}f;\n", pPropertyDescription->getName(),
 		(strlen(pPropertyDescription->getDefaultValStr()) > 0 ? pPropertyDescription->getDefaultValStr() : "0f"));
 
 	std::string name = pPropertyDescription->getName();
@@ -2441,8 +2445,8 @@ bool ClientSDKUnity::writeEntityProperty_DOUBLE(ScriptDefModule* pEntityScriptDe
 bool ClientSDKUnity::writeEntityProperty_STRING(ScriptDefModule* pEntityScriptDefModule,
 	ScriptDefModule* pCurrScriptDefModule, PropertyDescription* pPropertyDescription)
 {
-	sourcefileBody_ += fmt::format("\t\tpublic string {} = {};\n", pPropertyDescription->getName(),
-		(strlen(pPropertyDescription->getDefaultValStr()) > 0 ? pPropertyDescription->getDefaultValStr() : "\"\""));
+	sourcefileBody_ += fmt::format("\t\tpublic string {} = \"{}\";\n", pPropertyDescription->getName(),
+		(strlen(pPropertyDescription->getDefaultValStr()) > 0 ? pPropertyDescription->getDefaultValStr() : ""));
 
 	std::string name = pPropertyDescription->getName();
 	name[0] = std::toupper(name[0]);
@@ -2454,8 +2458,8 @@ bool ClientSDKUnity::writeEntityProperty_STRING(ScriptDefModule* pEntityScriptDe
 bool ClientSDKUnity::writeEntityProperty_UNICODE(ScriptDefModule* pEntityScriptDefModule,
 	ScriptDefModule* pCurrScriptDefModule, PropertyDescription* pPropertyDescription)
 {
-	sourcefileBody_ += fmt::format("\t\tpublic string {} = {};\n", pPropertyDescription->getName(),
-		(strlen(pPropertyDescription->getDefaultValStr()) > 0 ? pPropertyDescription->getDefaultValStr() : "\"\""));
+	sourcefileBody_ += fmt::format("\t\tpublic string {} = \"{}\";\n", pPropertyDescription->getName(),
+		(strlen(pPropertyDescription->getDefaultValStr()) > 0 ? pPropertyDescription->getDefaultValStr() : ""));
 
 	std::string name = pPropertyDescription->getName();
 	name[0] = std::toupper(name[0]);
